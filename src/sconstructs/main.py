@@ -547,6 +547,17 @@ for sample in sorted(samples.keys()):
             Depends(runs_dict[sample]['CIRCULAR_EXPRESSION']['CIRC_ALIGNERS']['TOPHAT_MAP'].values(), 
                     indexes['INDEXES']['BOWTIE'])
 
+        ## Findcirc depends on Bowtie2 index. 
+	## N.B: the very find_circ command must be referenced in the dependency declaration,
+	## not the downstream filtering commands. Otherwise, the order 
+	## index -> findcirc -> filter 
+	## could occur also as 
+	## findcirc -> index -> filter
+	## eventually breaking the pipeline
+	if runs_dict[sample]['CIRCULAR_EXPRESSION']['CIRC_METHODS']['FC']:
+            Depends(runs_dict[sample]['CIRCULAR_EXPRESSION']['CIRC_METHODS']['FC']['UNFILT_RES'], 
+                    indexes['INDEXES']['BOWTIE2'])
+
         ## dependencies from processed gene annotation
         if 'circexplorer2_bwa' in env['CIRCRNA_METHODS']:
             Depends(runs_dict[sample]['CIRCULAR_EXPRESSION']['CIRC_METHODS']['CE2_BWA'].values(),

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+export CIRCOMPARA_HOME=$(dirname $(readlink -f $0))/../../..
+
+TOOLS_DIR=$CIRCOMPARA_HOME/tools
+PYTHON_VERSION=`python --version 2>&1 | sed -r "s/Python ([0-9]\.[0-9]).*/\1/"`
+
+export TRIMMOMATIC=$TOOLS_DIR/Trimmomatic-0.39/trimmomatic-0.39.jar
+
+export PATH=$CIRCOMPARA_HOME/bin:$PATH
+
+export PYTHONPATH=$VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/:$TOOLS_DIR/lib/python$PYTHON_VERSION/site-packages/:$PYTHONPATH
+
+export R_LIBS=$CIRCOMPARA_HOME/tools/R_libs
+
+scons -f $CIRCOMPARA_HOME/src/sconstructs/main.py $1 
+

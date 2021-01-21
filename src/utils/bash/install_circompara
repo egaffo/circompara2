@@ -1,0 +1,26 @@
+#!/bin/bash
+
+export CIRCOMPARA_HOME=$(dirname $(readlink -f $0))/../../..
+
+mkdir $CIRCOMPARA_HOME/tools
+mkdir -p $CIRCOMPARA_HOME/bin
+
+export PATH=$CIRCOMPARA_HOME/bin/:$PATH
+## export environment variable for local R repository
+export R_LIBS=$CIRCOMPARA_HOME/tools/R_libs
+
+## install Scons
+cd $CIRCOMPARA_HOME/tools;
+wget -N -c http://prdownloads.sourceforge.net/scons/scons-local-3.1.2.tar.gz;
+mkdir -p scons
+tar -xf scons-local-3.1.2.tar.gz -C scons ; 
+ln -s $CIRCOMPARA_HOME/tools/scons/scons.py $CIRCOMPARA_HOME/bin/scons;
+cd -
+
+cd $CIRCOMPARA_HOME/bin
+ln -fs ../src/utils/python/* .
+ln -fs ../src/utils/R/* .
+cd -
+
+## install other tools
+$CIRCOMPARA_HOME/bin/scons -i -f $CIRCOMPARA_HOME/src/sconstructs/install_tools.py $1 
