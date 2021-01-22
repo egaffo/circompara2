@@ -182,6 +182,8 @@ circrnas_xpr = env.Command(circrnas_xpr_targets,
                            circrnas_xpr_command)
 
 ## make report html
+report_dir = 'report'
+
 circrnas_analysis_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
                         '''circrnas.gtf.file <- "${SOURCES[0].abspath}"; '''\
                         '''circ_to_genes.file <- "${SOURCES[1].abspath}"; '''\
@@ -198,7 +200,7 @@ circrnas_analysis_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath")
                         '''output_file = "$TARGET.abspath", quiet=T,'''\
                         '''intermediates_dir = dirname("$TARGET.abspath") )' '''
 
-circrnas_analysis_targets = ["circRNAs_analysis.html", 
+circrnas_analysis_targets = [os.path.join(report_dir, f) for f in ["circRNAs_analysis.html", 
                              "circRNA_expression_per_sample.csv",
                              "methods_shared_circRNA_counts.csv",
                              "cmet_per_circ.csv",
@@ -206,7 +208,7 @@ circrnas_analysis_targets = ["circRNAs_analysis.html",
                              "circRNAs_per_gene_per_sample.csv",
                              "circRNAs_per_gene_per_condition.csv",
                              "reliable.circrna.lin.xpr.csv",
-                             "reliable.circrna.clr.csv"]
+                             "reliable.circrna.clr.csv"]]
 
 circrnas_analysis_sources = [circrnas_xpr[0], 
                              env['CIRCGENES'][0], 
