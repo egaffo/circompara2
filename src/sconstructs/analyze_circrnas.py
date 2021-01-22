@@ -104,6 +104,9 @@ except NameError, ne:
              'several runs of CirComPara. N.B: it assumes the meta.csv '\
              'file is named as such and within the CirComPara run directory.', 
              '')
+    vars.Add('MAKE_REPORT',
+	     'Make an HTML report of circRNA results', 
+	     True)
 
     env = Environment(ENV = os.environ, 
                       SHELL = '/bin/bash',
@@ -161,6 +164,8 @@ except NameError, ne:
                         merge_gene_annotation[1]] #env['GENE2CIRC']
                
 
+env.SetDefault(MAKE_REPORT = False)
+
 ## get circrna raw expression
 circrnas_xpr_sources = [circrnas_gtf_list, 
                         bks_linear_counts_list]
@@ -181,51 +186,52 @@ circrnas_xpr = env.Command(circrnas_xpr_targets,
                            circrnas_xpr_sources,
                            circrnas_xpr_command)
 
-## make report html
-report_dir = 'report'
-
-circrnas_analysis_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
-                        '''circrnas.gtf.file <- "${SOURCES[0].abspath}"; '''\
-                        '''circ_to_genes.file <- "${SOURCES[1].abspath}"; '''\
-                        '''gene_to_circ.file  <- "${SOURCES[2].abspath}"; '''\
-                        '''ccp_circrna_raw_xpr.csv.file <- "${SOURCES[3].abspath}"; '''\
-                        '''bks_linear_counts.tab.gz.file <- "${SOURCES[4].abspath}"; '''\
-                        '''meta_file <- "${SOURCES[5].abspath}"; '''\
-                        '''vars.py.filepath <- "${SOURCES[6].abspath}"; '''\
-                        '''circrna_methods.csv.file <- "${SOURCES[7].abspath}"; '''\
-                        '''circrna_n_methods.csv.file <- "${SOURCES[8].abspath}"; '''\
-                        '''min_methods <- ${MIN_METHODS}; '''\
-                        '''min_reads <- ${MIN_READS}; '''\
-                        '''rmarkdown::render(input = "$CCP_RMD_DIR/circRNAs_analysis.Rmd",'''\
-                        '''output_file = "$TARGET.abspath", quiet=T,'''\
-                        '''intermediates_dir = dirname("$TARGET.abspath") )' '''
-
-circrnas_analysis_targets = [os.path.join(report_dir, f) for f in ["circRNAs_analysis.html", 
-                             "circRNA_expression_per_sample.csv",
-                             "methods_shared_circRNA_counts.csv",
-                             "cmet_per_circ.csv",
-                             "circRNAs_per_gene.csv",
-                             "circRNAs_per_gene_per_sample.csv",
-                             "circRNAs_per_gene_per_condition.csv",
-                             "reliable.circrna.lin.xpr.csv",
-                             "reliable.circrna.clr.csv"]]
-
-circrnas_analysis_sources = [circrnas_xpr[0], 
-                             env['CIRCGENES'][0], 
-                             env['CIRCGENES'][1], 
-                             circrnas_xpr[1], 
-                             circrnas_xpr[4],
-                             #env['PROCESSING_READ_STATS'],
-                             env['META'],
-                             env['VARS'],
-                             circrnas_xpr[3],
-                             circrnas_xpr[2]]
-
-circrnas_analysis = env.Command(circrnas_analysis_targets, 
-                                circrnas_analysis_sources, 
-                                circrnas_analysis_cmd)
-
-Clean(circrnas_analysis, 'Figs')
+if env['MAKE_REPORT']:
+	## make report html
+	report_dir = 'report'
+	
+	circrnas_analysis_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
+	                        '''circrnas.gtf.file <- "${SOURCES[0].abspath}"; '''\
+	                        '''circ_to_genes.file <- "${SOURCES[1].abspath}"; '''\
+	                        '''gene_to_circ.file  <- "${SOURCES[2].abspath}"; '''\
+	                        '''ccp_circrna_raw_xpr.csv.file <- "${SOURCES[3].abspath}"; '''\
+	                        '''bks_linear_counts.tab.gz.file <- "${SOURCES[4].abspath}"; '''\
+	                        '''meta_file <- "${SOURCES[5].abspath}"; '''\
+	                        '''vars.py.filepath <- "${SOURCES[6].abspath}"; '''\
+	                        '''circrna_methods.csv.file <- "${SOURCES[7].abspath}"; '''\
+	                        '''circrna_n_methods.csv.file <- "${SOURCES[8].abspath}"; '''\
+	                        '''min_methods <- ${MIN_METHODS}; '''\
+	                        '''min_reads <- ${MIN_READS}; '''\
+	                        '''rmarkdown::render(input = "$CCP_RMD_DIR/circRNAs_analysis.Rmd",'''\
+	                        '''output_file = "$TARGET.abspath", quiet=T,'''\
+	                        '''intermediates_dir = dirname("$TARGET.abspath") )' '''
+	
+	circrnas_analysis_targets = [os.path.join(report_dir, f) for f in ["circRNAs_analysis.html", 
+	                             "circRNA_expression_per_sample.csv",
+	                             "methods_shared_circRNA_counts.csv",
+	                             "cmet_per_circ.csv",
+	                             "circRNAs_per_gene.csv",
+	                             "circRNAs_per_gene_per_sample.csv",
+	                             "circRNAs_per_gene_per_condition.csv",
+	                             "reliable.circrna.lin.xpr.csv",
+	                             "reliable.circrna.clr.csv"]]
+	
+	circrnas_analysis_sources = [circrnas_xpr[0], 
+	                             env['CIRCGENES'][0], 
+	                             env['CIRCGENES'][1], 
+	                             circrnas_xpr[1], 
+	                             circrnas_xpr[4],
+	                             #env['PROCESSING_READ_STATS'],
+	                             env['META'],
+	                             env['VARS'],
+	                             circrnas_xpr[3],
+	                             circrnas_xpr[2]]
+	
+	circrnas_analysis = env.Command(circrnas_analysis_targets, 
+	                                circrnas_analysis_sources, 
+	                                circrnas_analysis_cmd)
+	
+	Clean(circrnas_analysis, 'Figs')
 
 #if env['CIRC_DIFF_EXP']:
 #    circrnas_diffexp_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
@@ -241,4 +247,5 @@ Clean(circrnas_analysis, 'Figs')
 #                                   circrnas_diffexp_sources, 
 #                                   circrnas_diffexp_cmd)
       
-Return('circrnas_analysis')
+#Return('circrnas_analysis')
+Return('circrnas_xpr')
