@@ -120,35 +120,58 @@ collect_circrna_maps_counts = env.Command(os.path.join(read_stats_collect_dir,
                                           collect_circrna_maps_counts_sources, 
                                           collect_circrna_maps_counts_cmd)
 
-if env['BYPASS'] == 'circular':
-   env['CIRCRNA_RMD'] = "_empty.Rmd"
-else:
-   env['CIRCRNA_RMD'] = "_circrna_read_stats.Rmd"
+## make read statistics table
+read_stats_targets = [os.path.join(read_stats_collect_dir, 
+				   'processing_and_mapped_read_counts.csv')]
+read_stats_sources = [reads_stats_collect] 
 
-## report read processing statistics
-read_stats_report_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
-                        '''read_stats_collect.file <- "${SOURCES[0].abspath}"; '''\
-                        '''linear.mapper <- "hisat2"; '''\
-                        '''circrna.reads.stats.file <- "${SOURCES[1].abspath}"; '''\
-                        '''meta_file <- "${SOURCES[2].abspath}"; '''\
-                        '''circrna_read_stats.Rmd <- file.path("$CCP_RMD_DIR", "$CIRCRNA_RMD"); '''\
-                        '''rmarkdown::render(input = "$CCP_RMD_DIR/read_statistics.Rmd",'''\
-                        '''output_file = "$TARGET.abspath", quiet=T,'''\
-                        '''intermediates_dir = dirname("$TARGET.abspath") )' '''
+read_stats_cmd = 'collect_read_stats.R '\
+		 '-o ${TARGETS[0].dir} '\
+		 '-r ${SOURCES[0].abspath} '
 
-read_stats_report = env.Command([os.path.join(read_stats_collect_dir, f) for 
-                                  f in ['read_statistics.html', 
-                                        'processing_and_mapped_read_counts.csv']],
-                                [reads_stats_collect, collect_circrna_maps_counts, 
-                                 File(env['META']).abspath, 
-                                 collect_circrna_maps_counts_sources],
-                                read_stats_report_cmd)
+if not env['BYPASS'] == 'linear':
+	read_stats_cmd = read_stats_cmd + '-l "hisat2" '
+
+if not env['BYPASS'] == 'circular':
+	read_stats_sources.append(collect_circrna_maps_counts)
+	read_stats_sources.append(collect_circrna_maps_counts_sources)
+	read_stats_cmd = read_stats_cmd + '-c ${SOURCES[1].abspath}'
+
+read_stats = env.Command(read_stats_targets,
+			 read_stats_sources,
+			 read_stats_cmd)
+
+### make read statistics HTML report
+#if env['BYPASS'] == 'circular':
+#   env['CIRCRNA_RMD'] = "_empty.Rmd"
+#else:
+#   env['CIRCRNA_RMD'] = "_circrna_read_stats.Rmd"
+#
+### report read processing statistics
+#read_stats_report_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
+#                        '''read_stats_collect.file <- "${SOURCES[0].abspath}"; '''\
+#                        '''linear.mapper <- "hisat2"; '''\
+#                        '''circrna.reads.stats.file <- "${SOURCES[1].abspath}"; '''\
+#                        '''meta_file <- "${SOURCES[2].abspath}"; '''\
+#                        '''circrna_read_stats.Rmd <- file.path("$CCP_RMD_DIR", "$CIRCRNA_RMD"); '''\
+#                        '''rmarkdown::render(input = "$CCP_RMD_DIR/read_statistics.Rmd",'''\
+#                        '''output_file = "$TARGET.abspath", quiet=T,'''\
+#                        '''intermediates_dir = dirname("$TARGET.abspath") )' '''
+#
+#read_stats_report = env.Command([os.path.join(read_stats_collect_dir, f) for 
+#                                  f in ['read_statistics.html', 
+#                                        'processing_and_mapped_read_counts.csv']],
+#                                [reads_stats_collect, collect_circrna_maps_counts, 
+#                                 File(env['META']).abspath, 
+#                                 collect_circrna_maps_counts_sources],
+#                                read_stats_report_cmd)
 
 
 Clean('.', read_stats_collect_dir)
 
 results = {'READ_MAPS_COUNTS': collect_circrna_maps_counts, 
-           'READS_STATS_REPORT': read_stats_report[0],
-           'PROCESSING_READ_STATS': read_stats_report[1]}
+           #'READS_STATS_REPORT': read_stats_report[0],
+           #'PROCESSING_READ_STATS': read_stats_report[1]}
+           'PROCESSING_READ_STATS': read_stats}
 
 Return('results')
