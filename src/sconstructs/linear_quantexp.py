@@ -196,7 +196,6 @@ if 'stringtie' in env['LINEAR_EXPRESSION_METHODS']:
 #    gene_raw_counts_list = gene_exp
 #    trx_raw_counts_list = gene_exp
 
-## REPORT GENE EXPRESSION
 gene_xpr_files_list = env.WriteLinesInTxt(os.path.join(geneexp_dir,
                                           'samples_expression_files.txt'), 
                                   gene_exp)
@@ -213,43 +212,74 @@ trx_raw_counts_files_list = env.WriteLinesInTxt(os.path.join(geneexp_dir,
                                           'samples_trxrawc_files.txt'), 
                                   trx_raw_counts_list)
 
-gene_exp_analysis_template = os.path.join("$CCP_RMD_DIR", "gene_expression_analysis.Rmd")
-gene_exp_analysis_cmd = '''Rscript -e 'results.dir <- dirname("${TARGETS[0].abspath}"); '''\
-                        '''meta.file <- "${SOURCES[0].abspath}"; '''\
-                        '''gene.xpr.file <- "${SOURCES[1].abspath}"; '''\
-                        '''transcripts.gtf.files <- "${SOURCES[2].abspath}"; '''\
-                        '''gene_raw_counts_list <- "${SOURCES[3].abspath}"; '''\
-                        '''trx_raw_counts_list <-"${SOURCES[4].abspath}"; '''\
-                        '''linear.method <- "${ ','.join( LINEAR_EXPRESSION_METHODS ) }"; '''\
-                        '''rmarkdown::render(input = "''' + \
-                        str(gene_exp_analysis_template) + '''", '''\
-                        '''output_file = "$TARGET.abspath", quiet=T,'''\
-                        '''intermediates_dir = dirname("${TARGETS[0].abspath}") )' '''
-
-gene_exp_analysis_targets = [os.path.join(geneexp_dir, 
-                                          "gene_expression_analysis.html"),
+gene_exp_analysis_targets = [os.path.join(geneexp_dir,
+                                          'gene_expression_FPKM_table.csv'),
                              os.path.join(geneexp_dir,
-                                          "gene_expression_FPKM_table.csv"),
+                                          'gene_expression_rawcounts_table.csv'),
                              os.path.join(geneexp_dir,
-                                          "gene_expression_rawcounts_table.csv"),
-                             os.path.join(geneexp_dir,
-                                         "transcript_expression_rawcounts_table.csv")]
+                                          'transcript_expression_rawcounts_table.csv'),
+    			     os.path.join(geneexp_dir,
+                                          'gene_expression_Nreads_table.csv'),
+			     os.path.join(geneexp_dir,
+                                          'gene_expression_TPM_table.csv')]
 
-if 'stringtie' in env['LINEAR_EXPRESSION_METHODS']:
-    gene_exp_analysis_targets.append(os.path.join(geneexp_dir,
-                                                  'gene_expression_Nreads_table.csv'))
-    gene_exp_analysis_targets.append(os.path.join(geneexp_dir,
-                                                  'gene_expression_TPM_table.csv'))
+gene_exp_analysis_cmd = 'get_gene_expression_files.R '\
+			'-o ${TARGETS[0].dir} '\
+			'-g ${SOURCES[0].abspath} '\
+			'-t ${SOURCES[1].abspath} '\
+			'-r ${SOURCES[2].abspath} '\
+			'-x ${SOURCES[3].abspath}'
 
-gene_exp_analysis_sources = [gene_meta, 
-                             gene_xpr_files_list, 
+gene_exp_analysis_sources = [gene_xpr_files_list, 
                              transcripts_gtf_files_list, 
                              gene_raw_counts_files_list,
-                             trx_raw_counts_files_list,
-                             gene_exp, trx_exp, gene_raw_counts_list, trx_raw_counts_list]
+                             trx_raw_counts_files_list]
+
 gene_exp_analysis = env.Command(gene_exp_analysis_targets, 
                                 gene_exp_analysis_sources, 
                                 gene_exp_analysis_cmd)
+
+#gene_report_dir = os.path.join(geneexp_dir, 'report')
+## REPORT GENE EXPRESSION
+## TODO: untangle generation of html report from summary table files
+
+#gene_exp_analysis_template = os.path.join("$CCP_RMD_DIR", "gene_expression_analysis.Rmd")
+#gene_exp_analysis_cmd = '''Rscript -e 'results.dir <- dirname("${TARGETS[0].abspath}"); '''\
+#                        '''meta.file <- "${SOURCES[0].abspath}"; '''\
+#                        '''gene.xpr.file <- "${SOURCES[1].abspath}"; '''\
+#                        '''transcripts.gtf.files <- "${SOURCES[2].abspath}"; '''\
+#                        '''gene_raw_counts_list <- "${SOURCES[3].abspath}"; '''\
+#                        '''trx_raw_counts_list <-"${SOURCES[4].abspath}"; '''\
+#                        '''linear.method <- "${ ','.join( LINEAR_EXPRESSION_METHODS ) }"; '''\
+#                        '''rmarkdown::render(input = "''' + \
+#                        str(gene_exp_analysis_template) + '''", '''\
+#                        '''output_file = "$TARGET.abspath", quiet=T,'''\
+#                        '''intermediates_dir = dirname("${TARGETS[0].abspath}") )' '''
+#
+#gene_exp_analysis_targets = [os.path.join(gene_report_dir, 
+#                                          "gene_expression_analysis.html"),
+#                             os.path.join(gene_report_dir,
+#                                          "gene_expression_FPKM_table.csv"),
+#                             os.path.join(gene_report_dir,
+#                                          "gene_expression_rawcounts_table.csv"),
+#                             os.path.join(gene_report_dir,
+#                                         "transcript_expression_rawcounts_table.csv")]
+#
+#if 'stringtie' in env['LINEAR_EXPRESSION_METHODS']:
+#    gene_exp_analysis_targets.append(os.path.join(gene_report_dir,
+#                                                  'gene_expression_Nreads_table.csv'))
+#    gene_exp_analysis_targets.append(os.path.join(gene_report_dir,
+#                                                  'gene_expression_TPM_table.csv'))
+#
+#gene_exp_analysis_sources = [gene_meta, 
+#                             gene_xpr_files_list, 
+#                             transcripts_gtf_files_list, 
+#                             gene_raw_counts_files_list,
+#                             trx_raw_counts_files_list,
+#                             gene_exp, trx_exp, gene_raw_counts_list, trx_raw_counts_list]
+#gene_exp_analysis = env.Command(gene_exp_analysis_targets, 
+#                                gene_exp_analysis_sources, 
+#                                gene_exp_analysis_cmd)
 
 env['GENE_EXP_ANALYSIS'] = gene_exp_analysis
 env['GENE_EXP'] = gene_exp
