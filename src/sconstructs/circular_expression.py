@@ -16,7 +16,7 @@ except NameError, ne:
         print "Run sample: unknown variables", unknown.keys()
         Exit(1)
 
-circRNA_collect_dir = 'circRNA_collection'
+circRNA_collect_dir = 'circrna_collection'
 
 env_merge_sample_circrnas = env.Clone()
 merge_sample_circrnas = SConscript(os.path.join(circRNA_collect_dir, 

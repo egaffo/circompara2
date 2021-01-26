@@ -21,9 +21,9 @@ def write_list_files(target, source, env):
         for line in dirs:
             basedirs.append(line.strip())
 
-    postfixes = [os.path.join('circular_expression', 'circRNA_collection', 
+    postfixes = [os.path.join('circular_expression', 'circrna_collection', 
                               'circrnas.gtf'), 
-                 os.path.join('circular_expression', 'circRNA_collection',
+                 os.path.join('circular_expression', 'circrna_collection',
                               'combined_circrnas.gtf.gz'), 
                  os.path.join('circular_expression', 'circrna_linexp', 
                               'bks_linear_counts.tab'), 
@@ -185,6 +185,41 @@ circrnas_xpr_command = '''ccp_circrna_expression.R '''\
 circrnas_xpr = env.Command(circrnas_xpr_targets,
                            circrnas_xpr_sources,
                            circrnas_xpr_command)
+
+env['STRANDED'] = ''
+strandness_pattern = re.compile("--rna-strandness\s+[FR]{1,2}")
+if strandness_pattern.search(env['HISAT2_EXTRA_PARAMS']):
+    if not env['UNSTRANDED_CIRCS']:
+        env['STRANDED'] = '-s'
+
+if env['CCP_COUNTS']:
+    ## compute CirComPara merged read counts
+    counts_dir = 'counts'
+    circular_reads_bed_gz_txt_sources = []
+    for s in env['RUNS_DICT'].keys():
+        for m in env['RUNS_DICT'][s]['CIRCULAR_EXPRESSION']['CIRC_METHODS'].keys():
+            res = env['RUNS_DICT'][s]['CIRCULAR_EXPRESSION']['CIRC_METHODS'][m]
+            if res:
+                circular_reads_bed_gz_txt_sources.append(res['CIRC_READS'])
+    circular_reads_bed_gz_txt_target = os.path.join(counts_dir,
+                                                    'circular.reads.bed.gz.txt')
+       
+    circular_reads_bed_gz_txt = env.WriteLinesInTxt(circular_reads_bed_gz_txt_target, 
+                                                    circular_reads_bed_gz_txt_sources)   
+    
+    counts_targets = [os.path.join(counts_dir, f) for f in
+                                    ['bks.counts.intersect.csv', 
+                                     'bks.counts.union.csv', 
+                                     'bks.counts.union.intersected.csv']]
+                                    #bks.counts.collected_reads.csv
+    counts_cmd = 'get_circompara_counts.R -i ${SOURCES[0]} '\
+                     '-q $MIN_METHODS -o ${TARGETS[0].dir}'\
+                     + os.path.sep + 'bks.counts. ' + env['STRANDED']
+    counts = env.Command(counts_targets, 
+                             [circular_reads_bed_gz_txt,
+                              circular_reads_bed_gz_txt_sources], 
+                             counts_cmd)
+
 
 if env['MAKE_REPORT']:
 	## make report html
