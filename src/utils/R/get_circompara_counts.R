@@ -63,13 +63,15 @@ write.csv(x = bks.read.method[, .(sample_id, chr, start, end, read_id, strand, c
 if(stranded){
     bks.reads <-
         bks.read.method[, .(n_methods = length(unique(circ_method)),
-                            methods = paste0(sort(unique(circ_method)), collapse = "|")),
-                        by = .(sample_id, chr, start, end, strand, read_id)]
+                            circ_methods = list(unique(circ_method))),
+                        by = .(sample_id, chr, start, end, read_id, 
+                               strand)]
 }else{
     bks.reads <-
         bks.read.method[, .(n_methods = length(unique(circ_method)),
-                            methods = paste0(sort(unique(circ_method)), collapse = "|")),
-                        by = .(sample_id, chr, start, end, read_id)]
+                            circ_methods = list(unique(circ_method))),
+                        by = .(sample_id, chr, start, end,
+                               read_id)]
 }
 
 ## STRATEGY A)
@@ -85,31 +87,56 @@ if(stranded){
 ## methods_partials: comma-separated list of read.count@method_names.
 ##                   As for n_methods_partials, giving the method names combinations
 if(stranded){
+    # bks.read.counts.intersect <-
+    #     bks.reads[n_methods >= min_methods, .N,
+    #               by = .(sample_id, chr, start, end, strand, methods,
+    #                      n_methods)][, .(read.count = sum(N),
+    #                                      n_methods_partials = paste0(paste0(N, "@", n_methods),
+    #                                                                  collapse = ","),
+    #                                      methods_partials = paste0(paste0(N, "@", methods),
+    #                                                                collapse = ",")),
+    #                                  by = .(sample_id, chr, start, end, strand)]
+    
     bks.read.counts.intersect <-
-        bks.reads[n_methods >= min_methods, .N,
-                  by = .(sample_id, chr, start, end, strand, methods,
-                         n_methods)][, .(read.count = sum(N),
-                                         n_methods_partials = paste0(paste0(N, "@", n_methods),
-                                                                     collapse = ","),
-                                         methods_partials = paste0(paste0(N, "@", methods),
-                                                                   collapse = ",")),
-                                     by = .(sample_id, chr, start, end, strand)]
+        bks.reads[n_methods >= min_methods, 
+                  .(read.count = .N,
+                    circ_methods = list(unique(unlist(circ_methods)))),
+                  by = .(sample_id, chr, start, end, 
+                         strand)][, .(n_methods = length(unlist(circ_methods)),
+                                      circ_methods = paste0(sort(unlist(circ_methods)), 
+                                                            collapse = "|")),
+                                  by = .(sample_id, chr, start, end, strand, 
+                                         read.count)]
+    
 }else{
+    
+    # bks.read.counts.intersect <-
+    #     bks.reads[n_methods >= min_methods, .N,
+    #               by = .(sample_id, chr, start, end, methods,
+    #                      n_methods)][, .(read.count = sum(N),
+    #                                      n_methods_partials = paste0(paste0(N, "@", n_methods),
+    #                                                                  collapse = ","),
+    #                                      methods_partials = paste0(paste0(N, "@", methods),
+    #                                                                collapse = ",")),
+    #                                  by = .(sample_id, chr, start, end)]
+    
     bks.read.counts.intersect <-
-        bks.reads[n_methods >= min_methods, .N,
-                  by = .(sample_id, chr, start, end, methods,
-                         n_methods)][, .(read.count = sum(N),
-                                         n_methods_partials = paste0(paste0(N, "@", n_methods),
-                                                                     collapse = ","),
-                                         methods_partials = paste0(paste0(N, "@", methods),
-                                                                   collapse = ",")),
-                                     by = .(sample_id, chr, start, end)]
+        bks.reads[n_methods >= min_methods, 
+                  .(read.count = .N,
+                    circ_methods = list(unique(unlist(circ_methods)))),
+                  by = .(sample_id, chr, start, 
+                         end)][, .(n_methods = length(unlist(circ_methods)),
+                                   circ_methods = paste0(sort(unlist(circ_methods)), 
+                                                         collapse = "|")),
+                               by = .(sample_id, chr, start, end,
+                                      read.count)]
+    
 }
 
 filename <- paste0(output_prefix, "intersect.", file.ext)
-write.csv(x = bks.read.counts.intersect,
-          file = filename,
-          row.names = F)
+fwrite(x = bks.read.counts.intersect,
+       file = filename,
+       row.names = F, col.names = T, sep = "\t")
 
 ## STRATEGY B)
 ## count all reads for each backsplice and keep it if >= min_methods detected
@@ -122,31 +149,32 @@ write.csv(x = bks.read.counts.intersect,
 ## This should improve sensibility of detection
 if(stranded){
     bks.read.counts.union <-
-        bks.read.method[, .(circ_methods = list(unique(circ_method))),
-                        by = .(sample_id, chr, start, end, strand,
-                               read_id)][, .(read.count = .N,
-                                             circ_methods = list(unique(unlist(circ_methods)))),
-                                         by = .(sample_id, chr, start, end,
-                                                strand)][, .(n_methods = length(unlist(circ_methods)),
-                                                             circ_methods = paste0(sort(unlist(circ_methods)), collapse = "|")),
-                                                         by = .(sample_id, chr, start, end,
-                                                                strand, read.count)] #[n_methods >= min_methods] ## do not filter already
+        bks.reads[, .(read.count = .N,
+                      circ_methods = list(unique(unlist(circ_methods)))),
+                  by = .(sample_id, chr, start, end,
+                         strand)][, .(n_methods = length(unlist(circ_methods)),
+                                      circ_methods = paste0(sort(unlist(circ_methods)), 
+                                                            collapse = "|")),
+                                  by = .(sample_id, chr, start, end,
+                                         strand, read.count)] 
+    #[n_methods >= min_methods] ## do not filter already
 }else{
     bks.read.counts.union <-
-        bks.read.method[, .(circ_methods = list(unique(circ_method))),
-                        by = .(sample_id, chr, start, end,
-                               read_id)][, .(read.count = .N,
-                                             circ_methods = list(unique(unlist(circ_methods)))),
-                                         by = .(sample_id, chr, start, end)][, .(n_methods = length(unlist(circ_methods)),
-                                                                                 circ_methods = paste0(sort(unlist(circ_methods)), collapse = "|")),
-                                                                             by = .(sample_id, chr, start, end,
-                                                                                    read.count)] #[n_methods >= min_methods] ## do not filter already
+        bks.reads[, .(read.count = .N,
+                      circ_methods = list(unique(unlist(circ_methods)))),
+                  by = .(sample_id, chr, start, 
+                         end)][, .(n_methods = length(unlist(circ_methods)),
+                                   circ_methods = paste0(sort(unlist(circ_methods)), 
+                                                         collapse = "|")),
+                               by = .(sample_id, chr, start, end,
+                                      read.count)] 
+    #[n_methods >= min_methods] ## do not filter already
 }
 
 filename <- paste0(output_prefix, "union.", file.ext)
-write.csv(x = bks.read.counts.union,
-          file = filename,
-          row.names = F)
+fwrite(x = bks.read.counts.union,
+       file = filename,
+       row.names = F, col.names = T, sep = "\t")
 
 ## STRATEGY C)
 ## for each backsplice, if one read was detected by >= min_methods then count
@@ -157,22 +185,53 @@ write.csv(x = bks.read.counts.union,
 ## - discard bks Z with count "100 reads" in total: 50 reads are detected only
 ## by DCC and 50 only by CIRI, no reads detected by both methods
 if(stranded){
-    bks <- unique(bks.reads[n_methods >= min_methods, .(chr, start, end, strand)])
+    bks <- unique(bks.reads[n_methods >= min_methods, .(sample_id, chr, start, end, strand)])
+    # bks.read.counts.union.intersected <-
+    #     bks.reads[bks, 
+    #               on = c("sample_id", "chr", "start", "end", 
+    #                      "strand")][, .(read.count = .N),
+    #                                 by = .(sample_id, chr, start, end, strand)]
+    
     bks.read.counts.union.intersected <-
-        bks.reads[bks, on = c("chr", "start", "end", "strand")][, .(read.count = .N),
-                                                                by = .(sample_id, chr, start, end, strand)]
+        bks.reads[bks, 
+                  .(read.count = .N,
+                    circ_methods = list(unique(unlist(circ_methods)))),
+                  by = .(sample_id, chr, start, end, 
+                         strand), 
+                  on = c("sample_id", "chr", "start", 
+                         "end"), 
+                  nomatch = NULL][, .(n_methods = length(unlist(circ_methods)),
+                                      circ_methods = paste0(sort(unlist(circ_methods)), 
+                                                            collapse = "|")),
+                                  by = .(sample_id, chr, start, end, strand, 
+                                         read.count)]
 }else{
-    bks <- unique(bks.reads[n_methods >= min_methods, .(chr, start, end)])
+    bks <- unique(bks.reads[n_methods >= min_methods, .(sample_id, chr, start, end)])
+    # bks.read.counts.union.intersected <-
+    #     bks.reads[bks, on = c("sample_id", "chr", "start", 
+    #                           "end")][, .(read.count = .N),
+    #                                   by = .(sample_id, chr, start, end)]
+    
     bks.read.counts.union.intersected <-
-        bks.reads[bks, on = c("chr", "start", "end")][, .(read.count = .N),
-                                                      by = .(sample_id, chr, start, end)]
-
+        bks.reads[bks, 
+                  .(read.count = .N,
+                    circ_methods = list(unique(unlist(circ_methods)))),
+                  by = .(sample_id, chr, start, 
+                         end), 
+                  on = c("sample_id", "chr", "start", 
+                         "end"), 
+                  nomatch = NULL][, .(n_methods = length(unlist(circ_methods)),
+                                      circ_methods = paste0(sort(unlist(circ_methods)), 
+                                                            collapse = "|")),
+                                  by = .(sample_id, chr, start, end,
+                                         read.count)]
+    
 }
 
 filename <- paste0(output_prefix, "union.intersected.", file.ext)
-write.csv(x = bks.read.counts.union.intersected,
-          file = filename,
-          row.names = F)
+fwrite(x = bks.read.counts.union.intersected,
+       file = filename,
+       row.names = F, col.names = T, sep = "\t")
 
 # ## save in a matrix-like format
 # bks.read.counts <- bks.read.counts.union
