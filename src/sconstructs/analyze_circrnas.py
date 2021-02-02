@@ -170,13 +170,14 @@ env.SetDefault(MAKE_REPORT = False)
 circrnas_xpr_sources = [circrnas_gtf_list, 
                         bks_linear_counts_list]
 
-circrnas_xpr_targets = ['unfiltered_circrnas.csv', 
-                        'ccp_circrna_raw_xpr.csv', 
-                        'ccp_circrna_n_methods.csv', 
-                        'ccp_circrna_methods.csv',
-                        'ccp_bks_linexp.csv'] 
-                        ## TODO: add each method expression matrix to targets
+circrnas_xpr_targets = ['ccp_bks_linexp.csv']
+			#'unfiltered_circrnas.csv', 
+                        #'unfilt'ccp_circrna_raw_xpr.csv', 
+                        #'unfilt'ccp_circrna_n_methods.csv', 
+                        #'unfilt'ccp_circrna_methods.csv',
+                        #'unfilt] 
 
+## TODO: change name of the script as it only produce wide table of parent lin expr
 circrnas_xpr_command = '''ccp_circrna_expression.R '''\
                        '''-c ${SOURCES[0]} -l ${SOURCES[1]} '''\
                        '''-r ${MIN_READS} -m ${MIN_METHODS} '''\
@@ -192,81 +193,86 @@ if strandness_pattern.search(env['HISAT2_EXTRA_PARAMS']):
     if not env['UNSTRANDED_CIRCS']:
         env['STRANDED'] = '-s'
 
-if env['CCP_COUNTS']:
-    ## compute CirComPara merged read counts
-    counts_dir = 'counts'
-    circular_reads_bed_gz_txt_sources = []
-    for s in env['RUNS_DICT'].keys():
-        for m in env['RUNS_DICT'][s]['CIRCULAR_EXPRESSION']['CIRC_METHODS'].keys():
-            res = env['RUNS_DICT'][s]['CIRCULAR_EXPRESSION']['CIRC_METHODS'][m]
-            if res:
-                circular_reads_bed_gz_txt_sources.append(res['CIRC_READS'])
-    circular_reads_bed_gz_txt_target = os.path.join(counts_dir,
-                                                    'circular.reads.bed.gz.txt')
-       
-    circular_reads_bed_gz_txt = env.WriteLinesInTxt(circular_reads_bed_gz_txt_target, 
-                                                    circular_reads_bed_gz_txt_sources)   
-    
-    counts_targets = [os.path.join(counts_dir, f) for f in
-                                    ['bks.counts.intersect.csv', 
-                                     'bks.counts.union.csv', 
-                                     'bks.counts.union.intersected.csv']]
-                                    #bks.counts.collected_reads.csv
-    counts_cmd = 'get_circompara_counts.R -i ${SOURCES[0]} '\
-                     '-q $MIN_METHODS -o ${TARGETS[0].dir}'\
-                     + os.path.sep + 'bks.counts. ' + env['STRANDED']
-    counts = env.Command(counts_targets, 
-                             [circular_reads_bed_gz_txt,
-                              circular_reads_bed_gz_txt_sources], 
-                             counts_cmd)
+## compute CirComPara merged read counts
+counts_dir = 'counts'
+circular_reads_bed_gz_txt_sources = []
+for s in env['RUNS_DICT'].keys():
+    for m in env['RUNS_DICT'][s]['CIRCULAR_EXPRESSION']['CIRC_METHODS'].keys():
+        res = env['RUNS_DICT'][s]['CIRCULAR_EXPRESSION']['CIRC_METHODS'][m]
+        if res:
+            circular_reads_bed_gz_txt_sources.append(res['CIRC_READS'])
+circular_reads_bed_gz_txt_target = os.path.join(counts_dir,
+                                                'circular.reads.bed.gz.txt')
+   
+circular_reads_bed_gz_txt = env.WriteLinesInTxt(circular_reads_bed_gz_txt_target, 
+                                                circular_reads_bed_gz_txt_sources)   
+
+ccp_counts_target_files = [] #bks.counts.collected_reads.csv
+if 'UN' in env['CCP_COUNTS'].split('_'): ccp_counts_target_files.append('bks.counts.union.csv')
+if 'IN' in env['CCP_COUNTS'].split('_'): ccp_counts_target_files.append('bks.counts.intersect.csv')
+if 'IU' in env['CCP_COUNTS'].split('_'): ccp_counts_target_files.append('bks.counts.union.intersected.csv')
+if 'MD' in env['CCP_COUNTS'].split('_'): ccp_counts_target_files.append('bks.counts.median.csv')
+
+counts_targets = [os.path.join(counts_dir, f) for f in ccp_counts_target_files]
+
+counts_cmd = 'get_circompara_counts.R -i ${SOURCES[1]} '\
+             '-t "$CCP_COUNTS" '\
+             '-c ${SOURCES[0]} '\
+             '-q $MIN_METHODS -o ${TARGETS[0].dir}'\
+             + os.path.sep + 'bks.counts. ' + env['STRANDED']
+counts = env.Command(counts_targets, 
+                         [circrnas_gtf_list, 
+    		      circular_reads_bed_gz_txt,
+                          circular_reads_bed_gz_txt_sources], 
+                         counts_cmd)
 
 
-if env['MAKE_REPORT']:
-	## make report html
-	report_dir = 'report'
-	
-	circrnas_analysis_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
-	                        '''circrnas.gtf.file <- "${SOURCES[0].abspath}"; '''\
-	                        '''circ_to_genes.file <- "${SOURCES[1].abspath}"; '''\
-	                        '''gene_to_circ.file  <- "${SOURCES[2].abspath}"; '''\
-	                        '''ccp_circrna_raw_xpr.csv.file <- "${SOURCES[3].abspath}"; '''\
-	                        '''bks_linear_counts.tab.gz.file <- "${SOURCES[4].abspath}"; '''\
-	                        '''meta_file <- "${SOURCES[5].abspath}"; '''\
-	                        '''vars.py.filepath <- "${SOURCES[6].abspath}"; '''\
-	                        '''circrna_methods.csv.file <- "${SOURCES[7].abspath}"; '''\
-	                        '''circrna_n_methods.csv.file <- "${SOURCES[8].abspath}"; '''\
-	                        '''min_methods <- ${MIN_METHODS}; '''\
-	                        '''min_reads <- ${MIN_READS}; '''\
-	                        '''rmarkdown::render(input = "$CCP_RMD_DIR/circRNAs_analysis.Rmd",'''\
-	                        '''output_file = "$TARGET.abspath", quiet=T,'''\
-	                        '''intermediates_dir = dirname("$TARGET.abspath") )' '''
-	
-	circrnas_analysis_targets = [os.path.join(report_dir, f) for f in ["circRNAs_analysis.html", 
-	                             "circRNA_expression_per_sample.csv",
-	                             "methods_shared_circRNA_counts.csv",
-	                             "cmet_per_circ.csv",
-	                             "circRNAs_per_gene.csv",
-	                             "circRNAs_per_gene_per_sample.csv",
-	                             "circRNAs_per_gene_per_condition.csv",
-	                             "reliable.circrna.lin.xpr.csv",
-	                             "reliable.circrna.clr.csv"]]
-	
-	circrnas_analysis_sources = [circrnas_xpr[0], 
-	                             env['CIRCGENES'][0], 
-	                             env['CIRCGENES'][1], 
-	                             circrnas_xpr[1], 
-	                             circrnas_xpr[4],
-	                             #env['PROCESSING_READ_STATS'],
-	                             env['META'],
-	                             env['VARS'],
-	                             circrnas_xpr[3],
-	                             circrnas_xpr[2]]
-	
-	circrnas_analysis = env.Command(circrnas_analysis_targets, 
-	                                circrnas_analysis_sources, 
-	                                circrnas_analysis_cmd)
-	
-	Clean(circrnas_analysis, 'Figs')
+#if env['MAKE_REPORT']:
+#	## make report html
+#	report_dir = 'report'
+#	
+#	circrnas_analysis_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\
+#	                        '''circrnas.gtf.file <- "${SOURCES[0].abspath}"; '''\
+#	                        '''circ_to_genes.file <- "${SOURCES[1].abspath}"; '''\
+#	                        '''gene_to_circ.file  <- "${SOURCES[2].abspath}"; '''\
+#	                        '''ccp_circrna_raw_xpr.csv.file <- "${SOURCES[3].abspath}"; '''\
+#	                        '''bks_linear_counts.tab.gz.file <- "${SOURCES[4].abspath}"; '''\
+#	                        '''meta_file <- "${SOURCES[5].abspath}"; '''\
+#	                        '''vars.py.filepath <- "${SOURCES[6].abspath}"; '''\
+#	                        '''circrna_methods.csv.file <- "${SOURCES[7].abspath}"; '''\
+#	                        '''circrna_n_methods.csv.file <- "${SOURCES[8].abspath}"; '''\
+#	                        '''min_methods <- ${MIN_METHODS}; '''\
+#	                        '''min_reads <- ${MIN_READS}; '''\
+#	                        '''rmarkdown::render(input = "$CCP_RMD_DIR/circRNAs_analysis.Rmd",'''\
+#	                        '''output_file = "$TARGET.abspath", quiet=T,'''\
+#	                        '''intermediates_dir = dirname("$TARGET.abspath") )' '''
+#	
+#	circrnas_analysis_targets = [os.path.join(report_dir, f) for f in ["circRNAs_analysis.html", 
+#	                             "circRNA_expression_per_sample.csv",
+#	                             "methods_shared_circRNA_counts.csv",
+#	                             "cmet_per_circ.csv",
+#	                             "circRNAs_per_gene.csv",
+#	                             "circRNAs_per_gene_per_sample.csv",
+#	                             "circRNAs_per_gene_per_condition.csv",
+#	                             "reliable.circrna.lin.xpr.csv",
+#	                             "reliable.circrna.clr.csv"]]
+#	
+#	circrnas_analysis_sources = [circrnas_xpr[0], 
+#	                             env['CIRCGENES'][0], 
+#	                             env['CIRCGENES'][1], 
+#	                             circrnas_xpr[1], 
+#	                             circrnas_xpr[4],
+#	                             #env['PROCESSING_READ_STATS'],
+#	                             env['META'],
+#	                             env['VARS'],
+#	                             circrnas_xpr[3],
+#	                             circrnas_xpr[2]]
+#	
+#	circrnas_analysis = env.Command(circrnas_analysis_targets, 
+#	                                circrnas_analysis_sources, 
+#	                                circrnas_analysis_cmd)
+#	
+#	Clean(circrnas_analysis, 'Figs')
 
 #if env['CIRC_DIFF_EXP']:
 #    circrnas_diffexp_cmd = '''Rscript -e 'results.dir <- dirname("$TARGET.abspath"); '''\

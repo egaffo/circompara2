@@ -278,8 +278,8 @@ vars.Add('QRE_FIND',
          '(Experimental) Set True to toggle analysis of QKI response elements sequences', 
          'False')
 vars.Add('CCP_COUNTS', 
-         'Use the CirComPara merged alignment counts', 
-         'True')
+         'Set the strategy to estimate circRNA expression', 
+         'UN')
 
 env = Environment(ENV=os.environ, SHELL = '/bin/bash',
                   variables=vars)
@@ -397,12 +397,12 @@ env['LINEAR_EXPRESSION_METHODS'] = ['stringtie'] ## set as the only one supporte
 #else:
 #    env.Replace(CIRC_DIFF_EXP = False)
 
-env.SetDefault(CCP_COUNTS = False)
-if env['CCP_COUNTS'].strip().lower() == 'true':
-    env.Replace(CCP_COUNTS = True)
-else:
-    env.Replace(CCP_COUNTS = False)
-    
+env.SetDefault(CCP_COUNTS = "UN")
+env['CCP_COUNTS'] = str(env['CCP_COUNTS'])
+if not all(e in ['UN', 'IN', 'IU', 'MD'] for e in env['CCP_COUNTS'].split('_')):
+    print 'Warning: CCP_COUNTS value "' + str(env['CCP_COUNTS']) + \
+          '" is not valid. Revert to default "UN"'
+    env['CCP_COUNTS'] = "UN"
 
 env.SetDefault(ORIGINAL_ANNOTATION = env['ANNOTATION'])
 
