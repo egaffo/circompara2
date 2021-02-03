@@ -221,11 +221,21 @@ counts_cmd = 'get_circompara_counts.R -i ${SOURCES[1]} '\
              '-q $MIN_METHODS -o ${TARGETS[0].dir}'\
              + os.path.sep + 'bks.counts. ' + env['STRANDED']
 counts = env.Command(counts_targets, 
-                         [circrnas_gtf_list, 
-    		      circular_reads_bed_gz_txt,
-                          circular_reads_bed_gz_txt_sources], 
-                         counts_cmd)
+                     [circrnas_gtf_list, 
+                      circular_reads_bed_gz_txt,
+                      circular_reads_bed_gz_txt_sources], 
+                     counts_cmd)
 
+## filter circrnas and make the result table
+reliable_circs_cmd = 'filter_and_cast_circexp.R '\
+                     '-i ${SOURCES[0]} '\
+                     '-r $MIN_READS '\
+                     '-m $MIN_METHODS '\
+                     '-o ${TARGETS[0]}'
+
+reliable_circs = env.Command(['reliable_circexp.csv'],
+                             [counts[0]], ## consider only the first table if multiple strategies (see order above)
+                             reliable_circs_cmd)
 
 #if env['MAKE_REPORT']:
 #	## make report html
