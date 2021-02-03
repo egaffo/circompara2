@@ -36,7 +36,7 @@ if env['ENV']['VIRTUAL_ENV']:
     pip = env.Command(os.path.join(bin_dir, 'pip'), pip_targets, SymLink)
 else:
     pip_file = 'get-pip.py'
-    pip_url = 'https://bootstrap.pypa.io/' + pip_file
+    pip_url = 'https://bootstrap.pypa.io/2.7/' + pip_file
     pip_targets = [os.path.join(tools_dir, pip_file),
                    os.path.join(tools_dir, 'bin', 'pip')]
     pip_cmd = ' && '.join(['wget -O ${TARGETS[0]} ' + pip_url, 
@@ -349,7 +349,7 @@ env.Command(os.path.join(bin_dir, "${SOURCE.file}"), BOWTIE1[3], SymLink)
 # TOPHAT2
 tophat2_dir = 'tophat-2.1.0.Linux_x86_64' #'tophat-2.1.1.Linux_x86_64'
 tophat2_tar = 'tophat-2.1.0.Linux_x86_64.tar.gz' #'tophat-2.1.1.Linux_x86_64.tar.gz' 
-tophat2_url = 'https://ccb.jhu.edu/software/tophat/downloads/' + tophat2_tar
+tophat2_url = 'http://ccb.jhu.edu/software/tophat/downloads/' + tophat2_tar
 
 tophat2_target = [os.path.join(tools_dir, tophat2_tar), 
                   os.path.join(tools_dir, tophat2_dir, 'tophat2')]
