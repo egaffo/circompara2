@@ -58,15 +58,15 @@ ln -s /path/to/circompara2/install/dir/circompara2
 
 ## circompara2 Docker image
 
-A [Docker image of CirComPara](http://hub.docker.com/r/egaffo/circompara-docker/) is available from DockerHub.
+A [Docker image of CirComPara2](http://hub.docker.com/r/egaffo/circompara2/) is available from DockerHub.
 
 To pull the image:
 
 ```bash
-docker pull egaffo/circompara2-docker
+docker pull egaffo/circompara2:v0.1
 ```
     
-You'll find the instructions on how to use the docker image at https://hub.docker.com/r/egaffo/circompara2-docker.
+<!-- You'll find the instructions on how to use the docker image at https://hub.docker.com/r/egaffo/circompara2-docker. -->
 
 # How to use
 
@@ -87,26 +87,26 @@ An example of the metadata table:
 
 file|sample
 ----|------
-/home/user/reads_S1_1.fq|S1
-/home/user/reads_S1_2.fq|S1
-/home/user/reads_S2_1.fq|S2
-/home/user/reads_S2_1.fq|S2
+/path/to/reads_S1_1.fq|S1
+/path/to/reads_S1_2.fq|S1
+/path/to/reads_S2_1.fq|S2
+/path/to/reads_S2_1.fq|S2
 
 
 and metadata file content:
 
     file,sample
-    /home/user/reads_S1_1.fq,S1
-    /home/user/reads_S1_2.fq,S1
-    /home/user/reads_S2_1.fq,S2
-    /home/user/reads_S2_1.fq,S2
+    /path/to/reads_S1_1.fq,S1
+    /path/to/reads_S1_2.fq,S1
+    /path/to/reads_S2_1.fq,S2
+    /path/to/reads_S2_1.fq,S2
 
 In the meta file you can also specify the adapter sequences to preprocess the reads, just add an `adapter` column with the adpter file.
 
 file|sample|adapter
 ----|------|-------
-/home/user/reads_S1_1.fq|S1|/home/user/circompara/adapter.fa
-/home/user/reads_S1_2.fq|S1|/home/user/circompara/adapter.fa
+/path/to/reads_S1_1.fq|S1|/path/to/adapter.fa
+/path/to/reads_S1_2.fq|S1|/path/to/adapter.fa
 
 
 ### Specify the reference genome file
@@ -260,8 +260,8 @@ To trigger the analyses you simply have to call the `./circompara2` script in th
 
 
 ```bash
-cd /home/user/circrna_analysis
-/home/user/circompara2/circompara2
+cd /path/to/circrna_analysis
+/path/to/circompara2/circompara2
 ```
 
 ### Additional options from the Scons engine:
@@ -383,7 +383,6 @@ When enabled, the fusion gene analysis will generate "synthetic" chromosomes ...
 
  -->
 
-TODO: update software versions!
 
 Software|Website|Version
 --------|-------|-------:
@@ -420,7 +419,9 @@ The core engine is the Scons build tool, which manage the various steps of the a
 # How to cite
 If you used CirComPara2 for your analysis, please add the following citation to your references:  
 
-citation [circompara_article]
+Sensitive, reliable, and robust circRNA detection from RNA-seq with CirComPara2  
+Enrico Gaffo, Alessia Buratin, Anna Dal Molin, Stefania Bortoluzzi  
+bioRxiv 2021.02.18.431705; doi: https://doi.org/10.1101/2021.02.18.431705 [circompara_article]
 
 
 [scons_link]: http://scons.org/
@@ -428,5 +429,5 @@ citation [circompara_article]
 [circompara_pack_link]: http://github.com/egaffo/circompara2/releases/latest "circompara package"
 [test_data_link]: http://github.com/egaffo/circompara2
 [circompara_link]: http://github.com/egaffo/circompara2
-[circompara_article]: url
+[circompara_article]: https://doi.org/10.1101/2021.02.18.431705  
 
