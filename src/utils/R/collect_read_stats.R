@@ -59,9 +59,8 @@ if(any(read_stats_collect$is.preprocessor)){
                      `:=`(`Raw reads` = as.integer(sub(pattern = ".*Input Read[^:]*: ([0-9]*) .*Surviving.*", 
                                                        "\\1", line)),
                           `Clean reads` = as.integer(sub(pattern = ".*Input Read[^:]*: [0-9]* [^0-9]* ([0-9]*) .*", 
-                                                         "\\1", line)),
-                          Dropped = as.integer(sub(pattern = ".*Dropped: ([0-9]*) .*", 
-                                                   "\\1", line)))]
+                                                         "\\1", 
+                                                         line)))][, Dropped := `Raw reads`- `Clean reads`]
 }else{
   ## no read preprocessing
   read_stats_collect[grepl("Total Sequences", line), 
