@@ -196,11 +196,11 @@ if(lin_reads != ""){
                    showProgress = F, header = T)
 
         melt.dcc.linexp.tab <- function(x){
-            ## DCC uses BED coordinates, we need to convert
-            x[, circ_id := paste0(chr, ":", start+1, "-",
-                                  end)][, `:=`(chr = NULL,
-                                               start = NULL,
-                                               end = NULL)]
+            # ## DCC uses BED coordinates, we need to convert
+            # x[, circ_id := paste0(chr, ":", start+1, "-",
+            #                       end)][, `:=`(chr = NULL,
+            #                                    start = NULL,
+            #                                    end = NULL)]
             melt(x,
                  id.vars = "circ_id",
                  variable.name = "sample_id",
@@ -220,9 +220,15 @@ if(lin_reads != ""){
         bks_linear_counts.tab.gz[, `:=`(sample_id = sub("_bks_linear_counts.tab$", "",
                                                         basename(sample_id)),
                                         circ_id = sub('.*"([^"]+)".*', "\\1", V9))]
+
         bks_linear_counts.tab.gz[, V1 := NULL]
         ## remove strand info from circ_id
         bks_linear_counts.tab.gz[, circ_id := sub(":[-+.]", "", circ_id)]
+
+        ## convert circ_id into BED format
+        bks_linear_counts.tab.gz[, c("chr", "start",
+                                     "end"):=tstrsplit(circ_id, ":|-",
+                                                       type.convert = T)][, circ_id := paste0(chr, ":", start-1, "-", end)]
 
         bks_linear_counts.tab.gz.m <-
             bks_linear_counts.tab.gz[, .(lin.reads = sum(V10)),

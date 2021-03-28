@@ -166,7 +166,7 @@ if(nrow(intergenic.circs) > 0){
                                                  "end") :=
                                                  tstrsplit(coords, "-",
                                                            type.convert = T)][, .(chr,
-                                                                                  start,
+                                                                                  start = start - 1, ## GTF to BED
                                                                                   end,
                                                                                   circ_id)]
     intergenic.circs[, `:=`(chr = NULL, start = NULL, end = NULL, coords = NULL)]
@@ -221,6 +221,11 @@ circ_to_genes[simple_gene_region != "intergenic",
               (cols) := lapply(.SD, remove.point), #by = circ_id,
               .SDcols = cols]
 
+## convert circ_id in BED
+circ_to_genes[, c("chr", "start",
+                 "end"):=tstrsplit(circ_id, ":|-",
+                                   type.convert = T)][, circ_id := paste0(chr, ":", start-1, "-", end)]
+
 ## save the table
 fwrite(x = circ_to_genes,
        file = file.path(results.path, "circ_to_genes.tsv"),
@@ -257,6 +262,11 @@ gene_to_circ <-
                                    gene_biotype = gene_biotypes,
                                    gene_strand, gene_region, simple_gene_region)]),
               use.names = T)
+
+## convert circ_id in BED
+gene_to_circ[, c("chr", "start",
+                  "end"):=tstrsplit(circ_id, ":|-",
+                                    type.convert = T)][, circ_id := paste0(chr, ":", start-1, "-", end)]
 
 ## save table
 fwrite(x = gene_to_circ,
