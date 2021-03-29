@@ -6,9 +6,13 @@ Author:     Enrico Gaffo
 Affiliation:    Compgen - University of Padova  
 Web:        http://compgen.bio.unipd.it  
 Date:       January 20, 2021  
+output: 
+  html_document: 
+    toc: yes
+    number_sections: no
 ---
 
-# CirComPara2
+# Circompara2
 
 CirComPara2 is a computational pipeline to detect, quantify, and correlate expression of linear and circular RNAs from RNA-seq data that combines multiple circRNA-detection methods.
 
@@ -16,14 +20,38 @@ CirComPara2 is a computational pipeline to detect, quantify, and correlate expre
 
 ## Quick install
 
-Execute the following commands to download and install (locally) in your system the scripts and tools required to run circompara2. If something goes wrong with the installation process try to manually install the software as described below.
+Execute the following commands to download and install (locally) in your system the scripts and tools required to run circompara2. If something goes wrong with the installation process try to manually install each software listed below.
+
+### Required software before installation
+
+You'll need some libraries and software installed in your system before starting the circompara2 installation. In a fresh Ubuntu 20.04 (Focal) you need to install the following packages by running:
+
+```{bash}
+sudo apt install git python2.7 wget unzip pkg-config default-jre r-base-core libcurl4-openssl-dev libxml2-dev libssl-dev curl pigz python-is-python2 python-dev-is-python2 parallel
+```
+
+#### Virtual environment
+
+Because not all software integrated in circompara2 runs on Python3, circompara2 still uses python2.7. If you system default is Python3, then you might want to consider **installing** and **running** circompara2 under a virtual environment, such as one generated with `virtualenv`:
+
+```{bash}
+virtualenv -p /usr/bin/python2.7 p2.7venv
+## activate the virtual environment
+source p2.7venv/bin/activate
+```
+
+Now you can proceed with the installation (or lanch circompara2 if you have already installed it).
+
+### Installation commands
 
 Download and extract [the latest release of CirComPara](http://github.com/egaffo/circompara2/releases/latest "circompara package"), or clone the GIT repository, enter circompara2 directory and run the automatic installer script:
 
 ``` bash
 git clone http://github.com/egaffo/circompara2
 cd circompara2
-./src/utils/install_circompara
+./src/utils/bash/install_circompara
+## make a link to the circompara2 main script into the main directory
+ln -s src/utils/bash/circompara circompara2
 ```
 
 ### Test your installation
@@ -40,7 +68,7 @@ cd test_circompara/analysis_se
 ../../circompara2
 ```
 
-### Add circompara2 to your environment
+#### Add circompara2 to your environment
 
 Once completed the installation, if you do not want to type the whole path to the circompara2 executable each time, you can update your `PATH` environment variable. From the terminal type the following command (replace the `/path/to/circompara2/install/dir` string with circompara2's actual path)
 
@@ -55,17 +83,13 @@ cd /home/user/bin
 ln -s /path/to/circompara2/install/dir/circompara2
 ```
 
-## circompara2 Docker image
+## Alternative installation: the circompara2 Docker image
 
-A [Docker image of CirComPara2](http://hub.docker.com/r/egaffo/circompara2/) is available from DockerHub.
-
-To pull the image:
+A [Docker image of CirComPara2](http://hub.docker.com/r/egaffo/circompara2/) is available from DockerHub in case you are struggling with the installation. The Docker image saves you from the installation burden, just pull the image:
 
 ``` bash
-docker pull egaffo/circompara2:v0.1
+docker pull egaffo/circompara2:v0.1.1
 ```
-
-<!-- You'll find the instructions on how to use the docker image at https://hub.docker.com/r/egaffo/circompara2-docker. -->
 
 # How to use
 
@@ -122,7 +146,9 @@ GENOME_FASTA = '/home/user/genomes/Homo_sapiens.GRCh38.dna.primary_assembly.fa'
 ### Specify options in vars.py
 
 Although parameters can be set from command line (sorrounded by quotes), you can set them in the `vars.py` file, which must be placed into the directory where circompara2 is called.  
-Below there is the full list of the parameters:
+Below there is the full list of the parameters.
+
+### Parameters
 
     META: The metadata table file where you specify the project samples, etc.
         default: meta.csv
@@ -302,6 +328,53 @@ cd /path/to/circrna_analysis
 -   Gene expression values for each gene and sample will be saved in the `linear_expression/linear_quantexp/geneexp/` directory: `gene_expression_FPKM_table.csv` file reports FPKMs and `gene_expression_analysis.html` file reports summary analysis.  
 -   Linear transcript sequences are saved as a multi-FASTA file into the `linear_expression/transcript_sequences` directory.
 
+## Run from the Docker image
+
+<!-- You'll find the instructions on how to use the docker image at https://hub.docker.com/r/egaffo/circompara2-docker. -->
+
+To run circompara2 from the Docker container
+
+```{bash}
+docker run -u `id -u` --rm -it -v $(pwd):/data egaffo/circompara2:v0.1.1
+
+```
+
+When using the Docker image, the paths in `meta.csv` and `vars.py` must be relative to the directory in the container where the volumes were mounted. (e.g. `/data` in the previous command example). You can mount different directories in different volumes by multiple `-v` instances. For instance, by issuing the following command
+
+```{bash}
+docker run -u `id -u` --rm -it -v /path/to/reads:/reads -v /path/to/annotation:/annotation egaffo/circompara2:v0.1.1
+```
+
+the `meta.csv` and `vars.py` files will be as follows:
+
+meta.csv
+
+    file,sample,adapter  
+    /reads/readsA_1.fastq.gz,sample_A,/circompara2/tools/Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa  
+    /reads/readsA_2.fastq.gz,sample_A,/circompara2/tools/Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa  
+    /reads/readsB_1.fastq.gz,sample_B,/circompara2/tools/Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa  
+    /reads/readsB_2.fastq.gz,sample_B,/circompara2/tools/Trimmomatic-0.39/adapters/TruSeq3-PE-2.fa  
+
+Note that circompara2 is installled in the `/circompara2` directory in the container, so you need that path to reach the installed tools' files (e.g. the Trimmomatic adapter files).
+
+vars.py
+
+``` python
+META            = "meta.csv"
+GENOME_FASTA    = '/annotation/CFLAR_HIPK3.fa'
+ANNOTATION      = '/annotation/CFLAR_HIPK3.gtf' 
+```
+
+### File owner using the Docker image
+
+If you want the container to give your user permissions you need to set the owner id with "`` -u `id -u` ``"
+
+``` bash
+docker run -u `id -u` --rm -it -v /path/to/reads:/reads -v /path/to/annotation:/annotation egaffo/circompara-docker
+```
+
+# 
+
 # Advanced features
 
 ## Make genome indexes for multiple instances of circompara2: the `make_indexes` utility
@@ -338,47 +411,13 @@ cd analysis
 
 Some tools in circompara2 require special parameters to handle properly stranded reads. circompara2 allows to specify such parameters Example: include the following parameters if you used the Illumina TruSeq Stranded Total RNA Library Prep Kit with Ribo-Zero Human/Mouse/Rat
 
-    HISAT2_EXTRA_PARAMS = "--rna-strandness FR "
+``` python
+HISAT2_EXTRA_PARAMS = "--rna-strandness FR "
+```
 
-<!-- Experimental
-## Fusion genes and fusion circular RNAs
-If you want to analyze fusion genes and enable detection of fusion circular RNAs (f-circRNAs) you have to include a `translocation` column to the metadata file. This field specifies the genomic coordinates of the gene pair involved in the fusion. You do not have to specify fusion breakpoints as the transcript structure is inferred by the transcript reconstruction algorithm (currently [Cufflinks][]).   
-Gene coordinates must be defined as follow:
+# Appendix
 
-    chr:start-end:strand&chr:start-end:strand
-
-with strand being either + or -; note that the two genes' coordinates are separated by a `&` character.
-More gene pairs can be specified in one row, you just have to separate the pairs by a `#` character
-Below, a metadata file example where the MLL-AF4 fusion gene is specified, as well as its "complementary" translocation:
-
-    file,sample,condition,translocation
-    /home/user/reads_S1_1.fq,S1,WT,11:34488-128832:+&4:21033000-21243056:+#4:21033000-21243056:+&11:34488-128832:+
-    /home/user/reads_S1_2.fq,S1,WT,
-    /home/user/reads_S2_1.fq,S2,MU,
-    /home/user/reads_S2_1.fq,S2,MU,
-
-As you can note from the exampple, you do not have to specify the gene pair in each line. Moreover, different samples can be set with different gene pairs.
-Fusion gene analysis will then been performed on all samples for all the fusion gene set. 
-
-
-
-
-## Advanced parameters: the vars.py file
-
-Type
-
-    circompara_circompara2 -h
-    
-to show an help of all parameters
-
-## Advanced features output
-
-**TODO** Output for f-circRNAs ...
-
-### Fusion genes
-When enabled, the fusion gene analysis will generate "synthetic" chromosomes ... **TODO**    
-
- -->
+## Software dependencies
 
 | Software      | Website                                                     |      Version |
 |---------------|-------------------------------------------------------------|-------------:|
@@ -398,7 +437,7 @@ When enabled, the fusion gene analysis will generate "synthetic" chromosomes ...
 | BEDtools      | <http://bedtools.readthedocs.io>                            |       2.29.2 |
 | Samtools      | <http://www.htslib.org/>                                    |         1.10 |
 
-### Errors with R packages
+## Errors with R packages
 
 If you get error messages from R packages of your already installed circompara2, maybe some update occurred in your R system. Try to re-install all circompara2 R package dependencies by using the `reinstall_R_pkgs` command from the `src/utils/bash` directory.
 
@@ -412,9 +451,9 @@ The core engine is the Scons build tool, which manage the various steps of the a
 **TODO**
 -->
 
-## Alternative pipelines
+## Alternative workflow pipelines
 
-With circompara2 you can chose to run either the circRNA, the linear genes (i.e. a traditional gene expression pipeline), or both branches of the pipeline (the default) by specifying with the `BYPASS` parameter which branch has to be skipped. Moreover, the `BYPASS` parameter can be set to `"linear,linmap"` if you already have the alignment files in BAM format and don't want to/can't/don't need to preprocess the raw reads. Then, Circompara2 will extract the unaligned reads to search circRNAs from the BAM files listed in the LINMAPS parameter and use the BAM files to compute the CLPs.
+With circompara2 you can chose to run either the circRNA, the linear genes (i.e. a traditional gene expression pipeline), or both branches of the pipeline (the default) by specifying with the `BYPASS` parameter which branch has to be skipped. Moreover, the `BYPASS` parameter can be set to `"linear,linmap"` if you already have the alignment files in BAM format and don't want to/can't/don't need to preprocess the raw reads. Then, circompara2 will extract the unaligned reads to search circRNAs from the BAM files listed in the LINMAPS parameter and use the BAM files to compute the CLPs.
 
 # How to cite
 
