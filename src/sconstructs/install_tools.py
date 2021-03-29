@@ -36,7 +36,7 @@ if env['ENV']['VIRTUAL_ENV']:
     pip = env.Command(os.path.join(bin_dir, 'pip'), pip_targets, SymLink)
 else:
     pip_file = 'get-pip.py'
-    pip_url = 'https://bootstrap.pypa.io/2.7/' + pip_file
+    pip_url = 'https://bootstrap.pypa.io/pip/2.7/' + pip_file
     pip_targets = [os.path.join(tools_dir, pip_file),
                    os.path.join(tools_dir, 'bin', 'pip')]
     pip_cmd = ' && '.join(['wget -O ${TARGETS[0]} ' + pip_url, 
