@@ -27,7 +27,7 @@ Execute the following commands to download and install (locally) in your system 
 You'll need some libraries and software installed in your system before starting the circompara2 installation. In a fresh Ubuntu 20.04 (Focal) you need to install the following packages by running:
 
 ```{bash}
-sudo apt install git python2.7 wget unzip pkg-config default-jre r-base-core libcurl4-openssl-dev libxml2-dev libssl-dev curl pigz python-is-python2 python-dev-is-python2 parallel
+sudo apt install git python2.7 wget unzip pkg-config default-jre r-base-core libcurl4-openssl-dev libxml2-dev libssl-dev curl pigz python-is-python2 python-dev-is-python2
 ```
 
 #### Virtual environment
