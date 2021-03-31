@@ -58,17 +58,18 @@ dcc = env.Command(dcc_targets,
 
 ## as default, use the CircCoordinates file 
 ## to collect backsplice reads
-circ_bed = dcc[1] ## CircCoordinates file is in BED format
+#circ_bed = dcc[1] ## CircCoordinates file is in BED format
+circ_bed = dcc[0]
 circrnas = dcc[0]
 
 ## when -F filtering option is used the results loose strand info
 ## so we have to retrieve it from the coodinates file
 if '-F' in env['DCC_EXTRA_PARAMS']:
-    circrnas = env.Command(os.path.join(out_dir, 'strandedCircRNACount'),
-                           [dcc[0], dcc[1]],
-                           'dcc_fix_strand.R -c ${SOURCES[0]} -d ${SOURCES[1]} -o ${TARGET}')
-    circ_bed = circrnas
-
+    fixedstrand = env.Command(os.path.join(out_dir, 'strandedCircRNACount'),
+                              [dcc[0], dcc[1]],
+                              'dcc_fix_strand.R -c ${SOURCES[0]} -d ${SOURCES[1]} -o ${TARGET}')
+    circrnas = fixedstrand[0]
+    circ_bed = fixedstrand[0]
 
 bed = env.Command([os.path.join(out_dir, "${SAMPLE}.sn.circ.bed")],
                   [circ_bed],
@@ -98,7 +99,7 @@ bks_reads = env.Command([os.path.join(out_dir,
                         [circ_reads, bed], 
                         bks_reads_cmd)
 
-results = {'CIRCRNAS': circrnas[0],
+results = {'CIRCRNAS': circrnas,
            'CIRC_COORDINATES': dcc[1],
            'CIRC_SN_BED': bed,
            'BKS_READS': bks_reads[0],
