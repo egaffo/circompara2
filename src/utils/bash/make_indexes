@@ -4,5 +4,5 @@ export CIRCOMPARA_HOME=$(dirname $(readlink -f $0))/../../../
 
 export PATH=$CIRCOMPARA_HOME/bin:$PATH
 
-scons -f $CIRCOMPARA_HOME/src/sconstructs/ccp_make_indexes.py $1 
+scons -f $CIRCOMPARA_HOME/src/sconstructs/make_indexes.py $1 
 
