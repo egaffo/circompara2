@@ -76,17 +76,17 @@ chimout.junc.bed <-
     chimout.junc.bed[, .(V1, V2 = V2 + 1, V3 = V5 - 1, V4 = V10, V5 = V7, V6 = V3)]
 
 strand <- arguments$stranded
-invert.strand <- function(s){
-    if(s == "+"){
-        s <- "-"
-    }else{
-        s <- "+"
-    }
-    s
-}
+# invert.strand <- function(s){
+#     if(s == "+"){
+#         s <- "-"
+#     }else{
+#         s <- "+"
+#     }
+#     s
+# }
 
 if(strand){
-    chimout.junc.bed[, V6 := sapply(V6, invert.strand)]
+    # chimout.junc.bed[, V6 := sapply(V6, invert.strand)]
 
     filterd.chimout.junc <-
         merge(chimout.junc.bed,
