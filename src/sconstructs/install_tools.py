@@ -117,9 +117,12 @@ dcc = env.Command(dcc_target,
                   [pandas, PYSAM], 
                   ['wget -O ${TARGETS[0]} ' + dcc_url,
                    'tar -xzf ${TARGETS[0]} -C ${TARGETS[0].dir}',
-                   'cd ' + dcc_dir +\
-                   #' && python setup.py install --prefix ' + dcc_dir,
-                   ' && python setup.py install ' + SET_PIP_USER + '',
+                   'cd ' + dcc_dir + ' && '\
+                   'cp ' + os.path.join(env['ENV']['CIRCOMPARA_HOME'], 
+					'src', 'utils', 'python', 
+					'DCC_patch_CombineCounts.py') +\
+                   ' ' + os.path.join('DCC', 'CombineCounts.py') + ' && '\
+                   'python setup.py install ' + SET_PIP_USER + '',
                    'cd ' + Dir('#').abspath]
                   )
 
