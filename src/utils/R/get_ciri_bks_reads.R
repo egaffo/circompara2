@@ -31,22 +31,31 @@ read.list <- arguments$read_list
 ## We need to decrease start position to comply with BED format
 ciri.out <- fread(input = input, select = c(2,3,4,11,12), showProgress = F)[, circRNA_start := circRNA_start - 1]
 
-## method jaap_DT2 from
-## https://stackoverflow.com/questions/13773770/split-comma-separated-strings-in-a-column-into-separate-rows
-bks.reads <-
-    ciri.out[, strsplit(as.character(junction_reads_ID), ",", fixed = T),
-         by = .(chr, circRNA_start, circRNA_end, strand,
-                junction_reads_ID)][, .(chr, circRNA_start, circRNA_end,
-                                        read_id = V1, score = 0, strand)]
+bks.reads <- data.table()
+all.reads <- data.table()
+
+if(nrow(ciri.out) > 0){
+
+    ## method jaap_DT2 from
+    ## https://stackoverflow.com/questions/13773770/split-comma-separated-strings-in-a-column-into-separate-rows
+    bks.reads <-
+        ciri.out[, strsplit(as.character(junction_reads_ID), ",", fixed = T),
+                 by = .(chr, circRNA_start, circRNA_end, strand,
+                        junction_reads_ID)][, .(chr, circRNA_start, circRNA_end,
+                                                read_id = V1, score = 0, strand)]
+
+    all.reads <-
+        bks.reads[, .N, by = read_id][order(-N), .(N, read_id)]
+
+}else{
+    warning(paste("No circRNAs in input file", input))
+}
 
 ## write gzipped file for circular reads
 reads_output.gz <- gzfile(reads.bed, "w")
 write.table(bks.reads, file = reads_output.gz,
             sep = "\t", col.names = F, row.names = F, quote = F)
 close(reads_output.gz)
-
-all.reads <-
-    bks.reads[, .N, by = read_id][order(-N), .(N, read_id)]
 
 write.table(all.reads, file = read.list,
             sep = "\t", col.names = F, row.names = F, quote = F)

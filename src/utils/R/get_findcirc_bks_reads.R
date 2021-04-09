@@ -43,6 +43,7 @@ circ.candidates.bed <- fread(input = circ.candidates.bed.file,
 
 bks.reads <- data.table()
 all.reads <- data.table()
+
 if(nrow(circ.candidates.bed) > 0 & nrow(sites.reads) > 0){
     bks.reads <- merge(sites.reads, circ.candidates.bed,
                        by = "V4", all.x = F,
@@ -50,6 +51,13 @@ if(nrow(circ.candidates.bed) > 0 & nrow(sites.reads) > 0){
 
     all.reads <-
         bks.reads[, .N, by = read_id][order(-N), .(N, read_id)]
+}else{
+    if(nrow(circ.candidates.bed) == 0){
+        warning(paste("No circRNAs in input file", circ.candidates.bed.file))
+    }
+    if(nrow(sites.reads) == 0){
+        warning(paste("No reads in input file", sites.reads.file))
+    }
 }
 
 ## write gzipped file for circular reads

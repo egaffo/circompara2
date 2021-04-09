@@ -21,62 +21,72 @@ parser <-
 arguments <- parse_args(parser, positional_arguments=F)
 
 orig.file <- arguments$circrnas
-orig.est <- fread(file = orig.file, header = F)
-annotation <- "bed"
-if(ncol(orig.est) > 6){
-    annotation <- "annotated"
-}
 
-orig.est <- orig.est[, .(V1, V2, V3, V5, V6)]
-orig.est$V1 <- as.character(orig.est$V1)
+if(file.info(orig.file)$size > 0){
 
-chimout.junc.file <- arguments$chimreads
-chimout.junc.bed <- fread(file = chimout.junc.file, header = F)
-chimout.junc.bed$V1 <- as.character(chimout.junc.bed$V1)
+    orig.est <- fread(file = orig.file, header = F)
+    annotation <- "bed"
+    if(ncol(orig.est) > 6){
+        annotation <- "annotated"
+    }
 
-if(annotation == "annotated"){
-    ext.range <- c(-arguments$range:arguments$range)
-    ext.range <- ext.range[ext.range != 0]
-    unfix.orig.est <-
-        orig.est[V5 != 0, .(start = V2 + ext.range,
-                            end = V3 + ext.range),
-                 by = .(V1, fixed.V2 = V2, fixed.V3= V3, V6)]
+    orig.est <- orig.est[, .(V1, V2, V3, V5, V6)]
+    orig.est$V1 <- as.character(orig.est$V1)
 
-    fixed.chimout.junc <-
-        merge(chimout.junc.bed,
-              unfix.orig.est,
-              by.x = c("V1", "V2", "V3"),
-              by.y = c("V1", "start", "end"))[, .(V1, V2 = fixed.V2,
-                                                  V3 = fixed.V3, V4, V5, V6 = V6.y)]
+    chimout.junc.file <- arguments$chimreads
+    chimout.junc.bed <- fread(file = chimout.junc.file, header = F)
+    chimout.junc.bed$V1 <- as.character(chimout.junc.bed$V1)
+
+    if(annotation == "annotated"){
+        ext.range <- c(-arguments$range:arguments$range)
+        ext.range <- ext.range[ext.range != 0]
+        unfix.orig.est <-
+            orig.est[V5 != 0, .(start = V2 + ext.range,
+                                end = V3 + ext.range),
+                     by = .(V1, fixed.V2 = V2, fixed.V3= V3, V6)]
+
+        fixed.chimout.junc <-
+            merge(chimout.junc.bed,
+                  unfix.orig.est,
+                  by.x = c("V1", "V2", "V3"),
+                  by.y = c("V1", "start", "end"))[, .(V1, V2 = fixed.V2,
+                                                      V3 = fixed.V3, V4, V5, V6 = V6.y)]
 
 
-    unfixed.chimout.junc <-
-        merge(chimout.junc.bed,
-              orig.est[V5 == 0],
-              by = c("V1", "V2", "V3"))[, .(V1, V2, V3, V4, V5 = V5.y, V6 = V6.y)]
+        unfixed.chimout.junc <-
+            merge(chimout.junc.bed,
+                  orig.est[V5 == 0],
+                  by = c("V1", "V2", "V3"))[, .(V1, V2, V3, V4, V5 = V5.y, V6 = V6.y)]
 
-    annotated.chimout.junc <-
-        rbindlist(list(fixed.chimout.junc,
-                       unfixed.chimout.junc),
-                  use.names = T)
+        annotated.chimout.junc <-
+            rbindlist(list(fixed.chimout.junc,
+                           unfixed.chimout.junc),
+                      use.names = T)
+    }else{
+        annotated.chimout.junc <-
+            merge(chimout.junc.bed[, .(V1, V2, V3, V4)],
+                  orig.est[, .(V1, V2, V3, V5, V6)],
+                  by = c("V1", "V2", "V3"), all.x = F, all.y = T)
+    }
+
+    splitted.filename <- strsplit(arguments$output, ".", fixed = T)[[1]]
+    if(tail(splitted.filename, 1) == "gz"){
+        tmp.outfile <- sub(".gz$", "", arguments$output)
+    }
+
+    annotated.chimout.junc <- annotated.chimout.junc[, .(V1, V2, V3, V4, V5, V6)]
+
+    fwrite(x = annotated.chimout.junc,
+           file = tmp.outfile,
+           sep = "\t",
+           col.names = F,
+           row.names = F)
+
+    if(tail(splitted.filename, 1) == "gz"){
+        gzip(tmp.outfile, destname = arguments$output)
+    }
 }else{
-    annotated.chimout.junc <-
-        merge(chimout.junc.bed[, .(V1, V2, V3, V4)],
-              orig.est[, .(V1, V2, V3, V5, V6)],
-              by = c("V1", "V2", "V3"), all.x = F, all.y = T)
+    warning(paste("No circRNAs in input file", orig.file))
+    file.create(arguments$output)
 }
 
-splitted.filename <- strsplit(arguments$output, ".", fixed = T)[[1]]
-if(tail(splitted.filename, 1) == "gz"){
-    tmp.outfile <- sub(".gz$", "", arguments$output)
-}
-
-fwrite(x = annotated.chimout.junc,
-       file = tmp.outfile,
-       sep = "\t",
-       col.names = F,
-       row.names = F)
-
-if(tail(splitted.filename, 1) == "gz"){
-    gzip(tmp.outfile, destname = arguments$output)
-}
