@@ -14,9 +14,9 @@ if(is.na(ncpus)){
 }
 install.packages(packs, repos="https://cloud.r-project.org/", dependencies = T, Ncpus = ncpus)
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
 #BiocManager::install(c("DESeq2", "ReportingTools", "ballgown"))
 #BiocManager::install(c("ReportingTools", "ballgown"))
-BiocManager::install(c("ballgown"), Ncpus = ncpus)
+#BiocManager::install(c("ballgown"), Ncpus = ncpus)
 
