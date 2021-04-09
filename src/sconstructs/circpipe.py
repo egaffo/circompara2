@@ -291,10 +291,6 @@ if not 'circular' in env['BYPASS']:
             env_sample_circrna_methods.AppendUnique(TOPHAT_PARAMS = ['--library-type', 'fr-firststrand'])
         elif 'FR' in env['HISAT2_EXTRA_PARAMS'].split():
             env_sample_circrna_methods.AppendUnique(TOPHAT_PARAMS = ['--library-type', 'fr-secondstrand'])
-            
-    else:
-        ## assume non-stranded library
-         env_sample_circrna_methods.AppendUnique(DCC_EXTRA_PARAMS = ['-N'])
     
     circrnas = env.SConscript(os.path.join(build_dir, circrna_methods), 
                             src_dir = SRC_DIR, 

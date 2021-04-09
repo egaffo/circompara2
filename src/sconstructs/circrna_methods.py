@@ -151,6 +151,10 @@ strandness_pattern = re.compile("--rna-strandness\s+[FR]{1,2}")
 if strandness_pattern.search(env['HISAT2_EXTRA_PARAMS']):
     env['STRANDED'] = True and not env['UNSTRANDED_CIRCS']
 
+if env['UNSTRANDED_CIRCS']:
+    ## assume non-stranded library
+    env.AppendUnique(DCC_EXTRA_PARAMS = ['-N'])
+         
 ## PREPARE CIRCRNA METHODS' INPUT READS
 if len(env['CIRC_MAPPING']['PE']) > 0:
     env['READS_PE'] = [File(f) for f in env['READS']]
@@ -180,8 +184,15 @@ if len(env['CIRC_MAPPING']['SE']) > 0:
 
                 ## switch TopHat2 parameter
                 th2_lib_type = 'fr-secondstrand'
-                ## set DCC strandnedd
-                env.AppendUnique(DCC_EXTRA_PARAMS = ['-ss'])
+                
+                if not env['UNSTRANDED_CIRCS']:
+                    
+                    ## purge possible inconsistent flags
+                    if '-N' in env['DCC_EXTRA_PARAMS']:
+                        env['DCC_EXTRA_PARAMS'].remove('-N')
+                        
+                    ## set DCC strandnedd
+                    env.AppendUnique(DCC_EXTRA_PARAMS = ['-ss'])
 
             elif 'FR' in env['HISAT2_EXTRA_PARAMS'].split():
                 ## reverse complement second mate
