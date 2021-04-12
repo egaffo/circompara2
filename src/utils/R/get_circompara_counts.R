@@ -22,8 +22,8 @@ option_list <- list(
                 help = "A circrnas.gtf file or a text file listing circrnas.gtf file paths to merge"),
     make_option(c("-t", "--xprtypes"), action = "store", type = "character", default = "UN_IN_IU_MD",
                 help = paste("An underscore separated list of the strategy(ies) that will be used to combine and report",
-                             "the expression estimates. The options available are:", 
-                             "UN = combine and count all the unique backsplice junction read fragments (BJRs) from any circRNA detection method;", 
+                             "the expression estimates. The options available are:",
+                             "UN = combine and count all the unique backsplice junction read fragments (BJRs) from any circRNA detection method;",
                              "IN = count only the BJRs commonly identified by at least 'min_methods' methods",
                              "IU = at least 1 BJRs is required to be commonly identified by at least 'min_methods' methods, then count all other BJRs",
                              "MD = compute the median of the read count reported by each method that detected the circRNA",
@@ -46,6 +46,22 @@ circrnas.gtf.files <- arguments$circrnas_gtf
 strategies <- unlist(strsplit(arguments$xprtypes, split = "_"))
 
 circular.reads.bed.gz.txt <- readLines(input)
+
+## filter out empty files
+keep <- sapply(circular.reads.bed.gz.txt, file.exists, simplify = T)
+if(any(!keep))print(paste0(circular.reads.bed.gz.txt[!keep], " skipped because not exisitng"))
+circular.reads.bed.gz.txt <- circular.reads.bed.gz.txt[keep]
+
+keep <- sapply(circular.reads.bed.gz.txt, function(x){file.size(x)>0}, simplify = T)
+if(any(!keep))print(paste0(circular.reads.bed.gz.txt[!keep], " skipped because 0 size"))
+circular.reads.bed.gz.txt <- circular.reads.bed.gz.txt[keep]
+
+keep <- sapply(circular.reads.bed.gz.txt,
+               function(x){length(grep("^$", x = readLines(x), invert = T))>0},
+               simplify = T)
+if(any(!keep))print(paste0(circular.reads.bed.gz.txt[!keep], " skipped because empty"))
+circular.reads.bed.gz.txt <- circular.reads.bed.gz.txt[keep]
+
 
 bks.read.method <-
     unique(rbindlist(sapply(circular.reads.bed.gz.txt, fread, header = F,
@@ -109,7 +125,7 @@ if("IN" %in% strategies){
         #                                      methods_partials = paste0(paste0(N, "@", methods),
         #                                                                collapse = ",")),
         #                                  by = .(sample_id, chr, start, end, strand)]
-        
+
         bks.read.counts.intersect <-
             bks.reads[n_methods >= min_methods,
                       .(read.count = .N,
@@ -120,9 +136,9 @@ if("IN" %in% strategies){
                                                                 collapse = "|")),
                                       by = .(sample_id, chr, start, end, strand,
                                              read.count)]
-        
+
     }else{
-        
+
         # bks.read.counts.intersect <-
         #     bks.reads[n_methods >= min_methods, .N,
         #               by = .(sample_id, chr, start, end, methods,
@@ -132,7 +148,7 @@ if("IN" %in% strategies){
         #                                      methods_partials = paste0(paste0(N, "@", methods),
         #                                                                collapse = ",")),
         #                                  by = .(sample_id, chr, start, end)]
-        
+
         bks.read.counts.intersect <-
             bks.reads[n_methods >= min_methods,
                       .(read.count = .N,
@@ -143,10 +159,10 @@ if("IN" %in% strategies){
                                                              collapse = "|")),
                                    by = .(sample_id, chr, start, end,
                                           read.count)]
-        
+
     }
-    
-    
+
+
     filename <- paste0(output_prefix, "intersect.", file.ext)
     fwrite(x = bks.read.counts.intersect,
            file = filename,
@@ -186,7 +202,7 @@ if("UN" %in% strategies){
                                           read.count)]
         #[n_methods >= min_methods] ## do not filter already
     }
-    
+
     filename <- paste0(output_prefix, "union.", file.ext)
     fwrite(x = bks.read.counts.union,
            file = filename,
@@ -209,7 +225,7 @@ if("IU" %in% strategies){
         #               on = c("sample_id", "chr", "start", "end",
         #                      "strand")][, .(read.count = .N),
         #                                 by = .(sample_id, chr, start, end, strand)]
-        
+
         bks.read.counts.union.intersected <-
             bks.reads[bks,
                       .(read.count = .N,
@@ -229,7 +245,7 @@ if("IU" %in% strategies){
         #     bks.reads[bks, on = c("sample_id", "chr", "start",
         #                           "end")][, .(read.count = .N),
         #                                   by = .(sample_id, chr, start, end)]
-        
+
         bks.read.counts.union.intersected <-
             bks.reads[bks,
                       .(read.count = .N,
@@ -243,14 +259,14 @@ if("IU" %in% strategies){
                                                                 collapse = "|")),
                                       by = .(sample_id, chr, start, end,
                                              read.count)]
-        
+
     }
-    
+
     filename <- paste0(output_prefix, "union.intersected.", file.ext)
     fwrite(x = bks.read.counts.union.intersected,
            file = filename,
            row.names = F, col.names = T, sep = "\t")
-    
+
 }
 
 
@@ -273,18 +289,18 @@ if("MD" %in% strategies){
             ## case: text file listing circrnas.gtf files
             circrnas.gtf.files <- readLines(circrnas.gtf.files)
         }
-        
+
         ## read circRNA results: filter low expressed (less than min_reads reads) circRNAs
         colClasses <- c("factor", "factor", "character", "integer",
                         "integer", "integer", "factor", "character", "character")
         circrnas.gtf <- rbindlist(lapply(circrnas.gtf.files, fread, data.table = T,
                                          colClasses = colClasses, showProgress = F),
                                   use.names = T)
-        
+
         if(stranded){
             circrnas.gtf[, `:=` (sample_id = sub('.*sample_id "([^"]*)".*', "\\1", V9),
                                  circ_id = paste0(V1, ":", V4-1, "-", V5, ":", V7))][, V9 := NULL]
-            
+
             ## sumup expression by circ_id (within the same detection method and sample)
             circrnas.gtf <-
                 circrnas.gtf[, .(V6 = sum(V6)),
@@ -292,7 +308,7 @@ if("MD" %in% strategies){
         }else{
             circrnas.gtf[, `:=` (sample_id = sub('.*sample_id "([^"]*)".*', "\\1", V9),
                                  circ_id = paste0(V1, ":", V4-1, "-", V5))][, V9 := NULL]
-            
+
             ## sumup expression by circ_id (within the same detection method and sample)
             circrnas.gtf <-
                 circrnas.gtf[, .(V6 = sum(V6)),
@@ -304,7 +320,7 @@ if("MD" %in% strategies){
                              circ_methods = paste0(sort(unique(V2)),
                                                    collapse = "|")),
                          by = .(sample_id, circ_id)]
-        
+
         filename <- paste0(output_prefix, "median.", file.ext)
         fwrite(x = circrna.median.reads,
                file = filename,
