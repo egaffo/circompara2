@@ -70,7 +70,7 @@ if env['ENV']['VIRTUAL_ENV']:
     cython_target = [os.path.join(env['ENV']['VIRTUAL_ENV'], 'bin', 'cython')]
 else:
     cython_target = [os.path.join(tools_dir, 'bin', 'cython')]
-cython_cmd = 'pip install ' + SET_PIP_USER + ' Cython==0.29.19 --install-option="--no-cython-compile"'
+cython_cmd = 'pip install --ignore-installed ' + SET_PIP_USER + ' Cython==0.29.19 --install-option="--no-cython-compile"'
 cython = env.Command(cython_target,
                      [pip, PYSAM],
                      cython_cmd)
@@ -85,7 +85,7 @@ if env['ENV']['VIRTUAL_ENV']:
 else:
     HTSeq_target.append(os.path.join(tools_dir, 'bin', 'htseq-count'))
 HTSeq = env.Command(HTSeq_target, [pip, cython, PYSAM], 
-                    ['pip install ' + SET_PIP_USER + ' HTSeq==0.12.4']) # --ignore-installed
+                    ['pip install --ignore-installed ' + SET_PIP_USER + ' HTSeq==0.12.4']) # --ignore-installed
 env.Command(os.path.join(bin_dir, "${SOURCE.file}"), HTSeq[1], SymLink)
 
 # CIRCEXPLORER2
@@ -94,7 +94,7 @@ if env['ENV']['VIRTUAL_ENV']:
 else:
     CIRCEXPLORER2_target = [os.path.join(tools_dir, 'bin', 'CIRCexplorer2')]#, 
 CIRCEXPLORER2 = env.Command(CIRCEXPLORER2_target, [pip, HTSeq, PYSAM],
-                           ['pip install ' + SET_PIP_USER + ' circexplorer2==2.3.8']) #--ignore-installed 
+                           ['pip install --ignore-installed ' + SET_PIP_USER + ' circexplorer2==2.3.8']) #--ignore-installed 
 env.Command(os.path.join(bin_dir, "${SOURCE.file}"), CIRCEXPLORER2[0], SymLink)
 
 # DCC
@@ -318,7 +318,7 @@ env.Command(os.path.join(bin_dir, "${SOURCE.file}"), gtfToGenePred, SymLink)
 # Bioconductor: ReportingTools, ballgown
 env['ENV']['R_LIBS'] = os.path.join(tools_dir, "R_libs")
 #R_libs_targets = [os.path.join(tools_dir, 'R_libs', 'DESeq2', 'R', 'DESeq2')]
-R_libs_targets = [os.path.join(tools_dir, 'R_libs', 'ballgown', 'R', 'ballgown')]
+R_libs_targets = [os.path.join(tools_dir, 'R_libs', 'data.table', 'R', 'data.table')]
 R_libs = env.Command(R_libs_targets, [], 'install_R_libs.R')
 
 # BOWTIE v1
