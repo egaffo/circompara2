@@ -412,7 +412,7 @@ cd analysis
 Some tools in circompara2 require special parameters to handle properly stranded reads. circompara2 allows to specify such parameters Example: include the following parameters if you used the Illumina TruSeq Stranded Total RNA Library Prep Kit with Ribo-Zero Human/Mouse/Rat
 
 ``` python
-HISAT2_EXTRA_PARAMS = "--rna-strandness FR "
+HISAT2_EXTRA_PARAMS = "--rna-strandness RF"
 ```
 
 # Appendix
