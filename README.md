@@ -88,7 +88,7 @@ ln -s /path/to/circompara2/install/dir/circompara2
 A [Docker image of CirComPara2](http://hub.docker.com/r/egaffo/circompara2/) is available from DockerHub in case you are struggling with the installation. The Docker image saves you from the installation burden, just pull the image:
 
 ``` bash
-docker pull egaffo/circompara2:v0.1.1
+docker pull egaffo/circompara2:v0.1.2
 ```
 
 # How to use
