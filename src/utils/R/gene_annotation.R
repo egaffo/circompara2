@@ -19,7 +19,7 @@ parser <- OptionParser(usage="%prog -c circular_expression/circRNA_collection/co
                        option_list=option_list)
 arguments <- parse_args(parser, positional_arguments=F)
 
-gene.annotation.file <- arguments$combined_circrnas #"../circular_expression/circRNA_collection/combined_circrnas.gtf.gz"
+gene.annotation.file <- arguments$combined_circrnas
 max.dist <- arguments$cluster_dist
 ## prepare result dir
 results.path <- arguments$outdir
@@ -87,13 +87,18 @@ if(ncol(fread(gene.annotation.file, showProgress = F, nrows = 1)) == 1){
     gene.annotation <- fread(gene.annotation.file)
 }
 
-# gene.annotation[, c("gene_id", "gene_name",
-#                     "gene_biotype"):=tstrsplit(V18, ";", fixed = T, fill = ".")]
 gene.annotation[V12 == ".", V12 := "intergenic"]
 
 gene.annotation[, `:=`(circ_id = sub('.*gene_id "([^"]+)".*', "\\1", V9),
                        gene_id = sub('.*gene_id "([^"]+)".*', "\\1", V18),
                        gene_name = sub('.*gene_name "([^"]+)".*', "\\1", V18))]
+
+## get circ_ids in BED coordinates
+gene.annotation[, c("chr", "start", "end",
+                    "strand"):=tstrsplit(circ_id,
+                                         ":|-",
+                                         type.convert = T)][, circ_id := paste0(chr, ":",
+                                                                       start-1, "-", end)]
 
 if(grepl("gene_[bio]*type", gene.annotation$V18[1])){
     gene.annotation[, gene_biotype := sub('.*gene_[bio]*type "([^"]+)".*', "\\1", V18)]
@@ -102,8 +107,8 @@ if(grepl("gene_[bio]*type", gene.annotation$V18[1])){
 }
 
 
-## collapse/remove circ_id strand
-gene.annotation[, circ_id := sub(":[+-]$", "", circ_id)]
+# ## collapse/remove circ_id strand
+# gene.annotation[, circ_id := sub(":[+-]$", "", circ_id)]
 
 ## CIRCRNA TO GENES
 ## make a table with all circrna ids in one column, one per row, and
@@ -166,7 +171,7 @@ if(nrow(intergenic.circs) > 0){
                                                  "end") :=
                                                  tstrsplit(coords, "-",
                                                            type.convert = T)][, .(chr,
-                                                                                  start = start - 1, ## GTF to BED
+                                                                                  start,
                                                                                   end,
                                                                                   circ_id)]
     intergenic.circs[, `:=`(chr = NULL, start = NULL, end = NULL, coords = NULL)]
@@ -222,9 +227,9 @@ circ_to_genes[simple_gene_region != "intergenic",
               .SDcols = cols]
 
 ## convert circ_id in BED
-circ_to_genes[, c("chr", "start",
-                 "end"):=tstrsplit(circ_id, ":|-",
-                                   type.convert = T)][, circ_id := paste0(chr, ":", start-1, "-", end)]
+# circ_to_genes[, c("chr", "start",
+#                  "end"):=tstrsplit(circ_id, ":|-",
+#                                    type.convert = T)]
 
 ## save the table
 fwrite(x = circ_to_genes,
@@ -264,9 +269,9 @@ gene_to_circ <-
               use.names = T)
 
 ## convert circ_id in BED
-gene_to_circ[, c("chr", "start",
-                  "end"):=tstrsplit(circ_id, ":|-",
-                                    type.convert = T)][, circ_id := paste0(chr, ":", start-1, "-", end)]
+# gene_to_circ[, c("chr", "start",
+#                   "end"):=tstrsplit(circ_id, ":|-",
+#                                     type.convert = T)]
 
 ## save table
 fwrite(x = gene_to_circ,
