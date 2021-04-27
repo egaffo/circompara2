@@ -62,7 +62,7 @@ PYSAM = env.Command(PYSAM_target, [pip],
 BIOPYTHON_dir = os.path.join(python_lib_dir, 'Bio')
 BIOPYTHON_target = [os.path.join(BIOPYTHON_dir, 'SeqIO', 'FastaIO.py')]
 BIOPYTHON = env.Command(BIOPYTHON_target, [pip, PYSAM], 
-                        ['pip install --ignore-installed ' + SET_PIP_USER + ' biopython==1.76'])
+                        ['pip install ' + SET_PIP_USER + ' biopython==1.76']) #--ignore-installed 
 
 ## CYTHON
 #cython_dir = os.path.join(python_lib_dir, 'cython')
@@ -70,7 +70,7 @@ if env['ENV']['VIRTUAL_ENV']:
     cython_target = [os.path.join(env['ENV']['VIRTUAL_ENV'], 'bin', 'cython')]
 else:
     cython_target = [os.path.join(tools_dir, 'bin', 'cython')]
-cython_cmd = 'pip install --ignore-installed ' + SET_PIP_USER + ' Cython==0.29.19 --install-option="--no-cython-compile"'
+cython_cmd = 'pip install ' + SET_PIP_USER + ' Cython==0.29.19 --install-option="--no-cython-compile"' #--ignore-installed 
 cython = env.Command(cython_target,
                      [pip, PYSAM],
                      cython_cmd)
@@ -85,7 +85,7 @@ if env['ENV']['VIRTUAL_ENV']:
 else:
     HTSeq_target.append(os.path.join(tools_dir, 'bin', 'htseq-count'))
 HTSeq = env.Command(HTSeq_target, [pip, cython, PYSAM], 
-                    ['pip install --ignore-installed ' + SET_PIP_USER + ' HTSeq==0.12.4']) # --ignore-installed
+                    ['pip install ' + SET_PIP_USER + ' HTSeq==0.12.4']) # --ignore-installed
 env.Command(os.path.join(bin_dir, "${SOURCE.file}"), HTSeq[1], SymLink)
 
 # CIRCEXPLORER2
@@ -94,7 +94,7 @@ if env['ENV']['VIRTUAL_ENV']:
 else:
     CIRCEXPLORER2_target = [os.path.join(tools_dir, 'bin', 'CIRCexplorer2')]#, 
 CIRCEXPLORER2 = env.Command(CIRCEXPLORER2_target, [pip, HTSeq, PYSAM],
-                           ['pip install --ignore-installed ' + SET_PIP_USER + ' circexplorer2==2.3.8']) #--ignore-installed 
+                           ['pip install ' + SET_PIP_USER + ' circexplorer2==2.3.8']) #--ignore-installed not added because it will install pysam > v0.15.4 that does not support reading gzip'd files
 env.Command(os.path.join(bin_dir, "${SOURCE.file}"), CIRCEXPLORER2[0], SymLink)
 
 # DCC
@@ -102,7 +102,7 @@ env.Command(os.path.join(bin_dir, "${SOURCE.file}"), CIRCEXPLORER2[0], SymLink)
 pandas_dir = os.path.join(python_lib_dir, 'pandas')
 pandas = env.Command([os.path.join(pandas_dir, '__init__.py')], 
                          [pip, HTSeq, PYSAM], 
-                         'pip install --ignore-installed ' + SET_PIP_USER + ' pandas==0.23')
+                         'pip install ' + SET_PIP_USER + ' pandas==0.23') #--ignore-installed 
 
 dcc_dir = os.path.join(tools_dir, 'DCC-0.4.8')
 dcc_tar = 'v0.4.8.tar.gz'
