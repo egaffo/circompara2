@@ -47,7 +47,7 @@ Your directory now contains the following files:
 
 ## 5. Run CirComPara2 through Docker, using 4 parallel tasks. Mind that 16 cores will be used, in total (max 4 cores per each parallel task).  
 ```bash
-docker run -u `id -u` --rm -it -v $(pwd):/data egaffo/circompara2:v0.1.2 '-j4'
+docker run -u `id -u` --rm -it -v $(pwd):/data egaffo/circompara2:v0.1.2.1 '-j4'
 ```
 
 ## 6. Check results
