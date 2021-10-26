@@ -88,7 +88,7 @@ ln -s /path/to/circompara2/install/dir/circompara2
 A [Docker image of CirComPara2](http://hub.docker.com/r/egaffo/circompara2/) is available from DockerHub in case you are struggling with the installation. The Docker image saves you from the installation burden, just pull the image:
 
 ``` bash
-docker pull egaffo/circompara2:v0.1.2
+docker pull egaffo/circompara2:v0.1.2.1
 ```
 
 # How to use
@@ -370,7 +370,7 @@ ANNOTATION      = '/annotation/CFLAR_HIPK3.gtf'
 If you want the container to give your user permissions you need to set the owner id with "`` -u `id -u` ``"
 
 ``` bash
-docker run -u `id -u` --rm -it -v /path/to/reads:/reads -v /path/to/annotation:/annotation egaffo/circompara-docker
+docker run -u `id -u` --rm -it -v /path/to/reads:/reads -v /path/to/annotation:/annotation egaffo/circompara2:v0.1.2.1
 ```
 
 # 
