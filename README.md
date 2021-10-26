@@ -335,14 +335,14 @@ cd /path/to/circrna_analysis
 To run circompara2 from the Docker container
 
 ```{bash}
-docker run -u `id -u` --rm -it -v $(pwd):/data egaffo/circompara2:v0.1.1
+docker run -u `id -u` --rm -it -v $(pwd):/data egaffo/circompara2:v0.1.2.1
 
 ```
 
 When using the Docker image, the paths in `meta.csv` and `vars.py` must be relative to the directory in the container where the volumes were mounted. (e.g. `/data` in the previous command example). You can mount different directories in different volumes by multiple `-v` instances. For instance, by issuing the following command
 
 ```{bash}
-docker run -u `id -u` --rm -it -v /path/to/reads:/reads -v /path/to/annotation:/annotation egaffo/circompara2:v0.1.1
+docker run -u `id -u` --rm -it -v /path/to/reads:/reads -v /path/to/annotation:/annotation egaffo/circompara2:v0.1.2.1
 ```
 
 the `meta.csv` and `vars.py` files will be as follows:
@@ -459,6 +459,4 @@ With circompara2 you can chose to run either the circRNA, the linear genes (i.e.
 
 If you used CirComPara2 for your analysis, please add the following citation to your references:
 
-Sensitive, reliable, and robust circRNA detection from RNA-seq with CirComPara2  
-Enrico Gaffo, Alessia Buratin, Anna Dal Molin, Stefania Bortoluzzi  
-bioRxiv 2021.02.18.431705; doi: <https://doi.org/10.1101/2021.02.18.431705> [circompara_article](https://doi.org/10.1101/2021.02.18.431705)
+Enrico Gaffo, Alessia Buratin, Anna Dal Molin, Stefania Bortoluzzi, Sensitive, reliable and robust circRNA detection from RNA-seq with CirComPara2, Briefings in Bioinformatics, 2021;, bbab418, https://doi.org/10.1093/bib/bbab418
