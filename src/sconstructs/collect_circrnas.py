@@ -100,7 +100,7 @@ circ_gtf = env.Command(circ_gtf_target, circ_gtf_sources, circ_gtf_cmd)
 ## compute gene introns
 merge_exons_cmd = '''grep -w exon ${SOURCES[0]} | '''\
                   '''sort -k1,1 -k4,4n | '''\
-                  '''bedtools merge -s -i stdin | '''\
+                  '''bedtools merge -s -c 6,6,7 -o distinct,distinct,distinct -i stdin | '''\
                   '''sed -r 's/([^\\t]+)\\t([^\\t]+)\\t([^\\t]+)\\t([^\\t]+)/'''\
                   '''\\1\\t\\2\\t\\3\\t\\.\\t\\.\\t\\4/' >  $TARGET'''
 merge_exons = env.Command('merged_exons.bed', 
