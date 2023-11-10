@@ -4,6 +4,10 @@ suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(R.utils))
 
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
 option_list <- list(
     make_option(c("-r", "--chimreads"), action="store", type="character",
                 help="sample_bwa.sam.gz BED transformed by get_ce2_bwa_circ_reads.py"),

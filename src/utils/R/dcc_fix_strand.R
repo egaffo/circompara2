@@ -3,6 +3,10 @@
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
 option_list <- list(
     make_option(c("-c", "--counts"), action = "store", type = "character",
                 help = "CircRNACounts file resulting from DCC"),

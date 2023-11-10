@@ -3,6 +3,10 @@
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
 option_list <- list(
     make_option(c("-c", "--circrnas_gtf"), action = "store", type = "character",
                 help = "(DEPRECATED) A circrnas.gtf file or a text file listing circrnas.gtf file paths to merge"),

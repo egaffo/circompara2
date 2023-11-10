@@ -4,6 +4,10 @@ suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(tools))
 
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
 option_list <- list(
   make_option(c("-o", "--results.dir"), action = "store", type = "character",
               default = "./",
@@ -30,71 +34,71 @@ read_stats_collect.file <- arguments$read_stats_collect.file
 circrna.reads.stats.file <- arguments$circrna.reads.stats.file
 linear.mapper <- arguments$linear.mapper
 
-read_stats_collect <- 
-  as.data.table(data.frame(line = cbind(scan(file = read_stats_collect.file, 
-                                             what = "character", 
-                                             multi.line = T, sep = "\n", 
-                                             quiet = T)), 
+read_stats_collect <-
+  as.data.table(data.frame(line = cbind(scan(file = read_stats_collect.file,
+                                             what = "character",
+                                             multi.line = T, sep = "\n",
+                                             quiet = T)),
                            stringsAsFactors = F))
 ## samples
-read_stats_collect$Sample <- gsub(pattern = paste(".*samples", "([^", "]*)", ".*", 
-                                                  sep = .Platform$file.sep), 
-                                  replacement = "\\1", 
+read_stats_collect$Sample <- gsub(pattern = paste(".*samples", "([^", "]*)", ".*",
+                                                  sep = .Platform$file.sep),
+                                  replacement = "\\1",
                                   x = read_stats_collect$line)
 
 ## preprocessing
-read_stats_collect$is.preprocessor <- grepl(pattern = "preprocess", 
+read_stats_collect$is.preprocessor <- grepl(pattern = "preprocess",
                                             x = read_stats_collect$line)
 
-read_stats_collect[is.preprocessor == TRUE, 
-                   preprocessor := gsub(pattern = paste("samples/[^", 
-                                                        "]*/processings/preprocess/([^", 
-                                                        "]*)",  ".*", 
-                                                        sep = .Platform$file.sep), 
-                                        replacement = "\\1", 
+read_stats_collect[is.preprocessor == TRUE,
+                   preprocessor := gsub(pattern = paste("samples/[^",
+                                                        "]*/processings/preprocess/([^",
+                                                        "]*)",  ".*",
+                                                        sep = .Platform$file.sep),
+                                        replacement = "\\1",
                                         x = line)]
 
 if(any(read_stats_collect$is.preprocessor)){
-  read_stats_collect[is.preprocessor == TRUE, 
-                     `:=`(`Raw reads` = as.integer(sub(pattern = ".*Input Read[^:]*: ([0-9]*) .*Surviving.*", 
+  read_stats_collect[is.preprocessor == TRUE,
+                     `:=`(`Raw reads` = as.integer(sub(pattern = ".*Input Read[^:]*: ([0-9]*) .*Surviving.*",
                                                        "\\1", line)),
-                          `Clean reads` = as.integer(sub(pattern = ".*Input Read[^:]*: [0-9]* [^0-9]* ([0-9]*) .*", 
-                                                         "\\1", 
+                          `Clean reads` = as.integer(sub(pattern = ".*Input Read[^:]*: [0-9]* [^0-9]* ([0-9]*) .*",
+                                                         "\\1",
                                                          line)))][, Dropped := `Raw reads`- `Clean reads`]
 }else{
   ## no read preprocessing
-  read_stats_collect[grepl("Total Sequences", line), 
+  read_stats_collect[grepl("Total Sequences", line),
                      `:=`(is.preprocessor = T,
                           `Raw reads` = sapply(line, function(x)as.integer(strsplit(x, "\t")[[1]][2])))]
-  read_stats_collect[grepl("Total Sequences", line), 
+  read_stats_collect[grepl("Total Sequences", line),
                      `:=`(`Clean reads` = `Raw reads`,
                           Dropped = 0L)]
 }
 
 ## linearly unmapped
 read_stats_collect[, is.mapper := grepl(pattern = linear.mapper, x = line)]
-read_stats_collect[is.mapper == TRUE, `:=`(`Linearly unmapped` = ifelse(grepl(pattern = "aligned[^0]* 0 times", 
-                                                                              x = line), 
-                                                                        sub(pattern = ".* ([0-9]*) .*aligned[^0]* 0 times", 
-                                                                            "\\1", x = line), 
+read_stats_collect[is.mapper == TRUE, `:=`(`Linearly unmapped` = ifelse(grepl(pattern = "aligned[^0]* 0 times",
+                                                                              x = line),
+                                                                        sub(pattern = ".* ([0-9]*) .*aligned[^0]* 0 times",
+                                                                            "\\1", x = line),
                                                                         NA))]
 read_stats_collect[, `Linearly unmapped` := as.integer(`Linearly unmapped`)]
 
 read_stats_collect$paired = F
 read_stats_collect[grepl("were paired", line), paired := T]
-read_stats_collect[Sample %in% read_stats_collect[paired == T, Sample], 
+read_stats_collect[Sample %in% read_stats_collect[paired == T, Sample],
                    paired := T]
 
-read_stats_collect[paired == T, 
+read_stats_collect[paired == T,
                    `:=`(`Raw reads` = 2L*`Raw reads`,
                         `Clean reads` = 2L*`Clean reads`,
                         Dropped = 2L*Dropped,
                         `Linearly unmapped` = 2L*`Linearly unmapped`)]
 
 ## merge table
-read.processing.table <- merge(unique(read_stats_collect[is.preprocessor == TRUE, 
+read.processing.table <- merge(unique(read_stats_collect[is.preprocessor == TRUE,
                                                          .(Sample, `Raw reads`, `Clean reads`, Dropped)])[!is.na(`Raw reads`)],
-                               read_stats_collect[is.mapper == TRUE, ][!is.na(`Linearly unmapped`), 
+                               read_stats_collect[is.mapper == TRUE, ][!is.na(`Linearly unmapped`),
                                                                        .(Sample, `Linearly unmapped`)],
                                all = T)
 
@@ -105,13 +109,13 @@ if(all(is.na(read.processing.table$`Linearly unmapped`))){
 
 read.processing.table[, `Linearly mapped` := `Clean reads`-`Linearly unmapped`]
 
-read.processing.table.m <- melt(read.processing.table, id.vars = "Sample", 
-                                variable.name = "Processing step", 
+read.processing.table.m <- melt(read.processing.table, id.vars = "Sample",
+                                variable.name = "Processing step",
                                 value.name = "Read count")
-read.processing.table.m$`Processing step` <- factor(x = read.processing.table.m$`Processing step`, 
-                                                    levels = c("Raw reads", "Dropped", 
-                                                               "Clean reads", "Linearly mapped", 
-                                                               "Linearly unmapped"), 
+read.processing.table.m$`Processing step` <- factor(x = read.processing.table.m$`Processing step`,
+                                                    levels = c("Raw reads", "Dropped",
+                                                               "Clean reads", "Linearly mapped",
+                                                               "Linearly unmapped"),
                                                     ordered = T)
 
 # Circular RNA methods' alignments
@@ -121,37 +125,37 @@ if(is.na(circrna.reads.stats.file)){
   message <- "CircRNA detection was not performed"
   print(message)
 }else{
-  circrna.mappings <- fread(cmd = paste0("zcat ", circrna.reads.stats.file), 
+  circrna.mappings <- fread(cmd = paste0("zcat ", circrna.reads.stats.file),
                             showProgress = F, fill = T, sep = "\t")[, .(V1, V2, V3)]
   colnames(circrna.mappings) <- c("file", "alignments", "readname")
-  
-  circrna.mappings[, `:=`(Sample = file_path_sans_ext(basename(file)), 
+
+  circrna.mappings[, `:=`(Sample = file_path_sans_ext(basename(file)),
                           `CircRNA method` = file_ext(file))]
-  circrna.mappings <- circrna.mappings[, .(`Mapped reads` = .N) , 
+  circrna.mappings <- circrna.mappings[, .(`Mapped reads` = .N) ,
                                        by = .(Sample, `CircRNA method`)][order(`CircRNA method`, Sample)]
-  
-  circrna.mappings.table.m <- rbind(circrna.mappings[, .(Sample, `CircRNA method`, `Mapped reads`)], 
-                                    read.processing.table.m[`Processing step` == "Linearly unmapped", 
-                                                            .(Sample, `CircRNA method` = `Processing step`, 
+
+  circrna.mappings.table.m <- rbind(circrna.mappings[, .(Sample, `CircRNA method`, `Mapped reads`)],
+                                    read.processing.table.m[`Processing step` == "Linearly unmapped",
+                                                            .(Sample, `CircRNA method` = `Processing step`,
                                                               `Mapped reads` = `Read count`)], use.names = T, fill = T)
-  circrna.mappings.table <- 
-    dcast(data = circrna.mappings.table.m[, .(`Mapped reads`, Sample, `CircRNA method`)], 
-          formula = Sample ~ `CircRNA method`, 
+  circrna.mappings.table <-
+    dcast(data = circrna.mappings.table.m[, .(`Mapped reads`, Sample, `CircRNA method`)],
+          formula = Sample ~ `CircRNA method`,
           value.var = "Mapped reads")
-  
+
   if(nrow(circrna.mappings) > 0){
-    sum.tab <- 
-      merge(read.processing.table, 
-            dcast(circrna.mappings[, .(Sample, `CircRNA method`, `Mapped reads`)], 
-                  formula = Sample ~ `CircRNA method`, 
+    sum.tab <-
+      merge(read.processing.table,
+            dcast(circrna.mappings[, .(Sample, `CircRNA method`, `Mapped reads`)],
+                  formula = Sample ~ `CircRNA method`,
                   value.var = "Mapped reads"))
   }else{
-    sum.tab <- read.processing.table 
+    sum.tab <- read.processing.table
   }
 }
 
 fwrite(x = sum.tab,
-       file = file.path(results.dir, "processing_and_mapped_read_counts.csv"), 
+       file = file.path(results.dir, "processing_and_mapped_read_counts.csv"),
        sep = "\t",
-       col.names = T, 
+       col.names = T,
        row.names = F)

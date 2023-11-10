@@ -3,7 +3,11 @@
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 
-options(scipen=999)
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
+options(scipen = 999)
 
 option_list <- list(
     make_option(c("-i", "--input"), action = "store", type = "character",

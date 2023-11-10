@@ -4,19 +4,23 @@ suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(bedr))
 
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
 option_list <- list(
     make_option(c("-c", "--combined_circrnas"), action = "store", type = "character",
-                help="combined_circrnas.gtf.gz"),
+                help = "combined_circrnas.gtf.gz"),
     make_option(c("-d", "--cluster_dist"), action = "store", type = "integer",
                 default = 5000L,
-                help="The maximum distance allowed to cluster intergenic circRNAs"),
+                help = "The maximum distance allowed to cluster intergenic circRNAs"),
     make_option(c("-o", "--outdir"), action = "store", type = "character",
                 default = "./",
-                help="Output directory were circ_to_genes.tsv and gene_to_circ.tsv will be saved")
+                help = "Output directory were circ_to_genes.tsv and gene_to_circ.tsv will be saved")
 )
 
-parser <- OptionParser(usage="%prog -c circular_expression/circRNA_collection/combined_circrnas.gtf.gz -d 5000 -o ../circular_expression/circRNA_collection",
-                       option_list=option_list)
+parser <- OptionParser(usage = "%prog -c circular_expression/circRNA_collection/combined_circrnas.gtf.gz -d 5000 -o ../circular_expression/circRNA_collection",
+                       option_list = option_list)
 arguments <- parse_args(parser, positional_arguments=F)
 
 gene.annotation.file <- arguments$combined_circrnas

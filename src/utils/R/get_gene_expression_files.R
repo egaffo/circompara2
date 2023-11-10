@@ -3,6 +3,10 @@
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
 option_list <- list(
   make_option(c("-o", "--results.dir"), action = "store", type = "character",
               default = "./",
@@ -36,31 +40,31 @@ trx_raw_counts_list     <- readLines(arguments$trx_raw_counts_list)
 ## assume input is from StringTie
 
 gene.xpr.list <- lapply(gene.xpr.file, fread)
-names(gene.xpr.list) <- sub("_gene_abund.tab", "", 
-                            sapply(gene.xpr.file, basename, 
+names(gene.xpr.list) <- sub("_gene_abund.tab", "",
+                            sapply(gene.xpr.file, basename,
                                    USE.NAMES = F))
 gene.xpr <- rbindlist(gene.xpr.list, use.names = T, idcol = "sample")
 
 ## TPM
 gene.xpr.tpm <- dcast(data = gene.xpr,
                       formula = `Gene ID` + `Gene Name` + Reference + Strand + Start + End ~ sample,
-                      value.var = "TPM", 
+                      value.var = "TPM",
                       fill = 0)
 
-fwrite(x = gene.xpr.tpm, 
-       file = file.path(results.dir, "gene_expression_TPM_table.csv"), 
+fwrite(x = gene.xpr.tpm,
+       file = file.path(results.dir, "gene_expression_TPM_table.csv"),
        sep = "\t",
        col.names = T,
        row.names = F)
 
 ## N reads (a.k.a. coverage)
-gene.xpr.nreads <- dcast(data = gene.xpr, 
-                         formula = `Gene ID` + `Gene Name` + Reference + Strand + Start + End ~ sample, 
-                         value.var = "Coverage", 
+gene.xpr.nreads <- dcast(data = gene.xpr,
+                         formula = `Gene ID` + `Gene Name` + Reference + Strand + Start + End ~ sample,
+                         value.var = "Coverage",
                          fill = 0)
-fwrite(x = gene.xpr.nreads, 
-       file = file.path(results.dir, "gene_expression_Nreads_table.csv"), 
-       sep = "\t", 
+fwrite(x = gene.xpr.nreads,
+       file = file.path(results.dir, "gene_expression_Nreads_table.csv"),
+       sep = "\t",
        col.names = T,
        row.names = F)
 
@@ -75,9 +79,9 @@ gene_raw_counts <- rbindlist(gene_raw_counts, use.names = T, idcol = "sample_id"
 
 fwrite(x = dcast(gene_raw_counts,
                  formula = gene_id ~ sample_id,
-                 value.var = "raw.reads", 
+                 value.var = "raw.reads",
                  fill = 0),
-       file = file.path(results.dir, "gene_expression_rawcounts_table.csv"), 
+       file = file.path(results.dir, "gene_expression_rawcounts_table.csv"),
        sep = "\t",
        col.names = T,
        row.names = F)
@@ -91,33 +95,33 @@ trx_raw_counts <- rbindlist(trx_raw_counts, use.names = T, idcol = "sample_id")
 
 fwrite(x = dcast(trx_raw_counts[raw.reads > 0, ],
                  formula = gene_id + transcript_id ~ sample_id,
-                 value.var = "raw.reads", 
+                 value.var = "raw.reads",
                  fill = 0),
-       file = file.path(results.dir, "transcript_expression_rawcounts_table.csv"), 
-       sep = "\t", 
+       file = file.path(results.dir, "transcript_expression_rawcounts_table.csv"),
+       sep = "\t",
        col.names = T,
        row.names = F)
 
 # expressed_genes <- genes.read_group_tracking[, FPKM := round(FPKM, digits = 8)][FPKM > 0]
 
-gene.xpr.fpkm <- 
+gene.xpr.fpkm <-
   dcast(data = gene.xpr,
         formula = `Gene ID` + `Gene Name` + Reference + Strand + Start + End ~ sample,
-        value.var = "FPKM", 
+        value.var = "FPKM",
         fill = 0)
 
 colnames(gene.xpr.fpkm)[colnames(gene.xpr.fpkm) == "Gene ID"] <- "gene"
 
-gene.xpr.fpkm <- 
-  gene.xpr.fpkm[, `:=`("Gene Name" = NULL, 
-                       "Reference"= NULL, 
-                       "Strand" = NULL, 
-                       "Start" = NULL, 
+gene.xpr.fpkm <-
+  gene.xpr.fpkm[, `:=`("Gene Name" = NULL,
+                       "Reference"= NULL,
+                       "Strand" = NULL,
+                       "Start" = NULL,
                        "End" = NULL)][]
 
 expressed_genes_table.file <- file.path(results.dir, "gene_expression_FPKM_table.csv")
-fwrite(x = gene.xpr.fpkm, 
-       file = expressed_genes_table.file, 
-       row.names = F, 
-       col.names = T, 
+fwrite(x = gene.xpr.fpkm,
+       file = expressed_genes_table.file,
+       row.names = F,
+       col.names = T,
        sep = "\t")

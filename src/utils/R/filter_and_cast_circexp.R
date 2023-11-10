@@ -3,6 +3,10 @@
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(data.table))
 
+ncpus <- as.integer(Sys.getenv('CPUS'))
+if (is.na(ncpus)) ncpus <- 1
+setDTthreads(threads = ncpus)
+
 option_list <- list(
   make_option(c("-i", "--input"), action = "store", type = "character",
               help = "CircRNA expression table file in 'long' format."),
@@ -27,9 +31,9 @@ min_reads <- arguments$min_reads
 min_methods <- arguments$min_methods
 output_file <- arguments$output
 
-tab <- fread(input_file, 
-             header = T, 
-             showProgress = F)[read.count >= min_reads & 
+tab <- fread(input_file,
+             header = T,
+             showProgress = F)[read.count >= min_reads &
                                  n_methods >= min_methods]
 
 if("strand" %in% colnames(tab)){
@@ -41,7 +45,7 @@ if("strand" %in% colnames(tab)){
 ## TODO: print out some statistics of the filtering
 
 fwrite(x = dcast(tab, circ_id ~ sample_id, value.var = "read.count", fill = 0),
-       file = output_file, 
-       sep = "\t", 
-       row.names = F, 
+       file = output_file,
+       sep = "\t",
+       row.names = F,
        col.names = T)
