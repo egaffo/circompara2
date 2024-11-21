@@ -129,10 +129,10 @@ read_stats_cmd = 'collect_read_stats.R '\
 		 '-o ${TARGETS[0].dir} '\
 		 '-r ${SOURCES[0].abspath} '
 
-if not env['BYPASS'] == 'linear':
+if not 'linear' in env['BYPASS']:
 	read_stats_cmd = read_stats_cmd + '-l "hisat2" '
 
-if not env['BYPASS'] == 'circular':
+if not 'circular' in env['BYPASS']:
 	read_stats_sources.append(collect_circrna_maps_counts)
 	read_stats_sources.append(collect_circrna_maps_counts_sources)
 	read_stats_cmd = read_stats_cmd + '-c ${SOURCES[1].abspath}'
