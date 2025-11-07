@@ -307,7 +307,7 @@ env.Command(os.path.join(bin_dir, "${SOURCE.file}"), FINDCIRC[1], SymLink)
 env.Command(os.path.join(bin_dir, "${SOURCE.file}"), FINDCIRC[2], SymLink)
 
 # gtfToGenePred
-gtfToGenePred_link = 'http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred'
+gtfToGenePred_link = 'http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v385/gtfToGenePred'
 gtfToGenePred_target = [os.path.join(tools_dir, 'gtfToGenePred')]
 gtfToGenePred = env.Command(gtfToGenePred_target, [], 
                             ['wget -O $TARGET ' + gtfToGenePred_link, 
