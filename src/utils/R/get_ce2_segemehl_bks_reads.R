@@ -39,7 +39,7 @@ orig.file <- arguments$circrnas
 
 if(file.info(orig.file)$size > 0){
 
-    orig.est <- fread(file = orig.file, header = F)
+    orig.est <- fread(file = orig.file, header = F, sep = "\t")
     annotation <- "bed"
     if(ncol(orig.est) > 6){
         annotation <- "annotated"
